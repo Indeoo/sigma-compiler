@@ -8,6 +8,7 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
+    id 'antlr'
 }
 
 repositories {
@@ -16,7 +17,10 @@ repositories {
 }
 
 dependencies {
-    // Use JUnit test framework.
+    // ANTLR4 dependencies
+    antlr 'org.antlr:antlr4:4.13.1'
+    implementation 'org.antlr:antlr4-runtime:4.13.1'
+
     testImplementation libs.junit
 
     // This dependency is used by the application.
@@ -28,6 +32,12 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
     }
+}
+
+// ANTLR4 configuration
+generateGrammarSource {
+    maxHeapSize = "64m"
+    arguments += ["-package", "org.example.parser"]
 }
 
 application {
