@@ -7,6 +7,7 @@ public class CompilerApp {
                 int x = 10;
                 println("Hello, Sigma!");
                 int y = x + 10;
+                println(y);
                 """;
 
     public static void main(String[] args) {

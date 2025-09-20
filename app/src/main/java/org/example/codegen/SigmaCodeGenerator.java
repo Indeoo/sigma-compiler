@@ -4,12 +4,15 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.example.parser.SigmaBaseVisitor;
 import org.example.parser.SigmaParser;
 import org.example.semantic.SymbolTable;
+import org.example.semantic.Symbol;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -25,10 +28,16 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
     private GeneratorAdapter mainMethod;
     private final List<String> errors;
 
+    // Variable tracking for local variable slots
+    private final Map<String, Integer> variableSlots;
+    private int nextLocalVarSlot;
+
     public SigmaCodeGenerator(SymbolTable symbolTable, String className) {
         this.symbolTable = symbolTable;
         this.className = className;
         this.errors = new ArrayList<>();
+        this.variableSlots = new HashMap<>();
+        this.nextLocalVarSlot = 1; // Slot 0 reserved for 'this' in non-static methods, but we're using static main
     }
 
     /**
@@ -116,11 +125,79 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
 
     @Override
     public Void visitVariableDeclaration(SigmaParser.VariableDeclarationContext ctx) {
-        // For now, skip variable declarations in bytecode
-        // In a full implementation, we'd allocate local variables
+        String varName = ctx.IDENTIFIER().getText();
+
+        // Allocate a local variable slot for this variable
+        int slot = nextLocalVarSlot++;
+        variableSlots.put(varName, slot);
+
+        // If there's an initialization expression, evaluate it and store the result
         if (ctx.expression() != null) {
             visit(ctx.expression());
+
+            // Get the variable type from symbol table to determine storage instruction
+            Symbol symbol = symbolTable.lookup(varName);
+            if (symbol != null) {
+                switch (symbol.getType()) {
+                    case INT:
+                        // For integers, we need to convert string result to int for now
+                        // TODO: Improve this when we have proper type handling
+                        mainMethod.invokeStatic(Type.getType(Integer.class),
+                                              Method.getMethod("Integer valueOf(String)"));
+                        mainMethod.storeLocal(slot, Type.getType(Integer.class));
+                        break;
+                    case STRING:
+                    default:
+                        // Store as string
+                        mainMethod.storeLocal(slot, Type.getType(String.class));
+                        break;
+                }
+            }
+        } else {
+            // Initialize with default value
+            Symbol symbol = symbolTable.lookup(varName);
+            if (symbol != null && symbol.getType() == org.example.semantic.SigmaType.INT) {
+                mainMethod.push(0);
+                mainMethod.invokeStatic(Type.getType(Integer.class),
+                                      Method.getMethod("Integer valueOf(int)"));
+                mainMethod.storeLocal(slot, Type.getType(Integer.class));
+            }
         }
+
+        return null;
+    }
+
+    @Override
+    public Void visitAssignmentStatement(SigmaParser.AssignmentStatementContext ctx) {
+        String varName = ctx.IDENTIFIER().getText();
+
+        // Look up the variable slot
+        Integer slot = variableSlots.get(varName);
+        if (slot != null) {
+            // Evaluate the expression and store the result
+            visit(ctx.expression());
+
+            // Get the variable type from symbol table to determine storage instruction
+            Symbol symbol = symbolTable.lookup(varName);
+            if (symbol != null) {
+                switch (symbol.getType()) {
+                    case INT:
+                        // For integers, convert string result to int
+                        mainMethod.invokeStatic(Type.getType(Integer.class),
+                                              Method.getMethod("Integer valueOf(String)"));
+                        mainMethod.storeLocal(slot, Type.getType(Integer.class));
+                        break;
+                    case STRING:
+                    default:
+                        // Store as string
+                        mainMethod.storeLocal(slot, Type.getType(String.class));
+                        break;
+                }
+            }
+        } else {
+            errors.add("Assignment to undefined variable: " + varName);
+        }
+
         return null;
     }
 
@@ -182,13 +259,32 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
         String operator = ctx.getChild(1).getText();
 
         if ("+".equals(operator)) {
-            // String concatenation or numeric addition
-            visit(ctx.expression(0));
-            visit(ctx.expression(1));
+            // For now, we'll assume integer arithmetic and convert to string at the end
+            // A more sophisticated compiler would do proper type analysis
 
-            // For simplicity, assume string concatenation
-            Type stringType = Type.getType(String.class);
-            mainMethod.invokeVirtual(stringType, Method.getMethod("String concat (String)"));
+            visit(ctx.expression(0));  // Left operand
+            visit(ctx.expression(1));  // Right operand
+
+            // Convert both operands from string to int, add them, then convert back to string
+            // Convert second operand (top of stack) to int
+            mainMethod.invokeStatic(Type.getType(Integer.class),
+                                  Method.getMethod("Integer valueOf(String)"));
+            mainMethod.invokeVirtual(Type.getType(Integer.class),
+                                   Method.getMethod("int intValue()"));
+
+            // Swap to get first operand on top, then convert to int
+            mainMethod.swap();
+            mainMethod.invokeStatic(Type.getType(Integer.class),
+                                  Method.getMethod("Integer valueOf(String)"));
+            mainMethod.invokeVirtual(Type.getType(Integer.class),
+                                   Method.getMethod("int intValue()"));
+
+            // Add the two integers
+            mainMethod.visitInsn(IADD);
+
+            // Convert result back to string
+            mainMethod.invokeStatic(Type.getType(String.class),
+                                  Method.getMethod("String valueOf(int)"));
         }
     }
 
@@ -200,9 +296,26 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
     public Void visitPrimary(SigmaParser.PrimaryContext ctx) {
         if (ctx.IDENTIFIER() != null) {
             String varName = ctx.IDENTIFIER().getText();
-            // For simplicity, push variable name as string
-            // In full implementation, we'd load from local variables
-            mainMethod.push(varName);
+
+            // Look up the variable in our local variable tracking
+            Integer slot = variableSlots.get(varName);
+            if (slot != null) {
+                // Load the variable from its local variable slot
+                Symbol symbol = symbolTable.lookup(varName);
+                if (symbol != null && symbol.getType() == org.example.semantic.SigmaType.INT) {
+                    // Load Integer object and convert to string for println
+                    mainMethod.loadLocal(slot, Type.getType(Integer.class));
+                    mainMethod.invokeVirtual(Type.getType(Integer.class),
+                                           Method.getMethod("String toString()"));
+                } else {
+                    // Load as string
+                    mainMethod.loadLocal(slot, Type.getType(String.class));
+                }
+            } else {
+                // Variable not found in local variables, push as literal string
+                // This handles method names like "println"
+                mainMethod.push(varName);
+            }
         } else if (ctx.literal() != null) {
             visit(ctx.literal());
         }
