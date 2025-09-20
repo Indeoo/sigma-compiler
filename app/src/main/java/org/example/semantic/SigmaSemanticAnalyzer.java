@@ -194,9 +194,21 @@ public class SigmaSemanticAnalyzer extends SigmaBaseVisitor<SigmaType> {
 
         // Enter class scope
         symbolTable.enterScope("class_" + className);
-        visit(ctx.block());
+        visit(ctx.classBody());
         symbolTable.exitScope();
 
+        return SigmaType.UNKNOWN;
+    }
+
+    @Override
+    public SigmaType visitClassBody(SigmaParser.ClassBodyContext ctx) {
+        // Visit all declarations and statements in the class body
+        for (SigmaParser.DeclarationContext decl : ctx.declaration()) {
+            visit(decl);
+        }
+        for (SigmaParser.StatementContext stmt : ctx.statement()) {
+            visit(stmt);
+        }
         return SigmaType.UNKNOWN;
     }
 
@@ -282,9 +294,17 @@ public class SigmaSemanticAnalyzer extends SigmaBaseVisitor<SigmaType> {
     @Override
     public SigmaType visitBlock(SigmaParser.BlockContext ctx) {
         symbolTable.enterScope("block");
+
+        // Visit all declarations in the block
+        for (SigmaParser.DeclarationContext decl : ctx.declaration()) {
+            visit(decl);
+        }
+
+        // Visit all statements in the block
         for (SigmaParser.StatementContext stmt : ctx.statement()) {
             visit(stmt);
         }
+
         symbolTable.exitScope();
         return SigmaType.VOID;
     }

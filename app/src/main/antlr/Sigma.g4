@@ -12,7 +12,7 @@ declaration
     ;
 
 variableDeclaration
-    : type IDENTIFIER ('=' expression)? ';'?
+    : type IDENTIFIER ('=' expression)? ';'
     ;
 
 methodDeclaration
@@ -20,7 +20,11 @@ methodDeclaration
     ;
 
 classDeclaration
-    : 'class' IDENTIFIER block
+    : 'class' IDENTIFIER classBody
+    ;
+
+classBody
+    : '{' (declaration | statement)* '}'
     ;
 
 parameterList
@@ -41,7 +45,7 @@ statement
     ;
 
 assignmentStatement
-    : IDENTIFIER '=' expression ';'?
+    : IDENTIFIER '=' expression ';'
     ;
 
 expressionStatement
@@ -57,11 +61,11 @@ whileStatement
     ;
 
 returnStatement
-    : 'return' expression? ';'?
+    : 'return' expression? ';'
     ;
 
 block
-    : '{' statement* '}'
+    : '{' (declaration | statement)* '}'
     ;
 
 expression
