@@ -10,29 +10,74 @@ import java.util.List;
 /**
  * Semantic analyzer for the Sigma language.
  * Performs type checking, scope analysis, and symbol resolution.
+ * Returns a SemanticResult containing the symbol table and any errors/warnings.
  */
-public class SemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
+public class SigmaSemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
 
     private SymbolTable symbolTable;
     private List<String> errors;
+    private List<String> warnings;
     private SigmaType currentMethodReturnType;
 
-    public SemanticAnalyzer(SymbolTable symbolTable) {
-        this.symbolTable = symbolTable;
+    public SigmaSemanticAnalyzer() {
         this.errors = new ArrayList<>();
+        this.warnings = new ArrayList<>();
         this.currentMethodReturnType = null;
+    }
+
+    /**
+     * Analyze a parse tree and return semantic analysis results
+     *
+     * @param parseTree the parse tree to analyze
+     * @return SemanticResult containing symbol table and any errors/warnings
+     */
+    public SemanticResult analyze(ParseTree parseTree) {
+        // Reset state for new analysis
+        this.symbolTable = new SymbolTable();
+        this.errors = new ArrayList<>();
+        this.warnings = new ArrayList<>();
+        this.currentMethodReturnType = null;
+
+        try {
+            // Visit the parse tree to perform semantic analysis
+            visit(parseTree);
+
+            if (hasErrors()) {
+                return SemanticResult.failure(errors);
+            } else if (hasWarnings()) {
+                return SemanticResult.successWithWarnings(symbolTable, warnings);
+            } else {
+                return SemanticResult.success(symbolTable);
+            }
+
+        } catch (Exception e) {
+            errors.add("Internal error during semantic analysis: " + e.getMessage());
+            return SemanticResult.failure(errors);
+        }
     }
 
     public boolean hasErrors() {
         return !errors.isEmpty();
     }
 
+    public boolean hasWarnings() {
+        return !warnings.isEmpty();
+    }
+
     public List<String> getErrors() {
         return new ArrayList<>(errors);
     }
 
+    public List<String> getWarnings() {
+        return new ArrayList<>(warnings);
+    }
+
     private void addError(String message) {
         errors.add(message);
+    }
+
+    private void addWarning(String message) {
+        warnings.add(message);
     }
 
     @Override
@@ -66,6 +111,11 @@ public class SemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
                 addError("Cannot assign " + exprType + " to variable '" + varName + "' of type " + varType);
             }
             symbol.setValue(null); // Mark as initialized
+        } else {
+            // Add warning for uninitialized variables in some cases
+            if (varType != SigmaType.BOOLEAN) { // Boolean has default false
+                addWarning("Variable '" + varName + "' declared but not initialized");
+            }
         }
 
         symbolTable.define(symbol);
@@ -177,7 +227,7 @@ public class SemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
     @Override
     public SigmaType visitIfStatement(BasicGroovyParser.IfStatementContext ctx) {
         SigmaType conditionType = visit(ctx.expression());
-        if (conditionType != SigmaType.BOOLEAN) {
+        if (conditionType != SigmaType.BOOLEAN && conditionType != SigmaType.UNKNOWN) {
             addError("If condition must be boolean, got " + conditionType);
         }
 
@@ -197,7 +247,7 @@ public class SemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
     @Override
     public SigmaType visitWhileStatement(BasicGroovyParser.WhileStatementContext ctx) {
         SigmaType conditionType = visit(ctx.expression());
-        if (conditionType != SigmaType.BOOLEAN) {
+        if (conditionType != SigmaType.BOOLEAN && conditionType != SigmaType.UNKNOWN) {
             addError("While condition must be boolean, got " + conditionType);
         }
 
@@ -263,10 +313,11 @@ public class SemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
             SigmaType operandType = visit(ctx.expression(0));
             String operator = getOperatorFromContext(ctx);
 
-            if (operator.equals("!") && operandType != SigmaType.BOOLEAN) {
+            if (operator.equals("!") && operandType != SigmaType.BOOLEAN && operandType != SigmaType.UNKNOWN) {
                 addError("Logical NOT can only be applied to boolean, got " + operandType);
                 return SigmaType.UNKNOWN;
-            } else if (operator.equals("-") && operandType != SigmaType.INT && operandType != SigmaType.DOUBLE) {
+            } else if (operator.equals("-") && operandType != SigmaType.INT &&
+                      operandType != SigmaType.DOUBLE && operandType != SigmaType.UNKNOWN) {
                 addError("Unary minus can only be applied to numbers, got " + operandType);
                 return SigmaType.UNKNOWN;
             }
