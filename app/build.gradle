@@ -21,6 +21,11 @@ dependencies {
     antlr 'org.antlr:antlr4:4.13.1'
     implementation 'org.antlr:antlr4-runtime:4.13.1'
 
+    // ASM library for bytecode generation
+    implementation 'org.ow2.asm:asm:9.6'
+    implementation 'org.ow2.asm:asm-commons:9.6'
+    implementation 'org.ow2.asm:asm-util:9.6'
+
     // JUnit 5 dependencies
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.9.2'
@@ -48,5 +53,5 @@ generateGrammarSource {
 
 application {
     // Define the main class for the application.
-    mainClass = 'org.example.SigmaCompiler'
+    mainClass = 'org.example.CompilerApp'
 }

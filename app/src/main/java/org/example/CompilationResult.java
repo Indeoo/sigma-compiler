@@ -8,37 +8,39 @@ import java.util.List;
 
 /**
  * Result of compiling a Sigma program.
- * Encapsulates the results from all compilation phases: parsing, semantic analysis, and execution.
+ * Contains the actual compiled JVM bytecode that can be executed by the JVM.
  */
 public class CompilationResult {
 
     public enum Phase {
-        PARSING, SEMANTIC_ANALYSIS, EXECUTION
+        PARSING, SEMANTIC_ANALYSIS, CODE_GENERATION
     }
 
     private final ParseResult parseResult;
     private final SemanticResult semanticResult;
-    private final boolean executionSuccessful;
-    private final List<String> executionErrors;
+    private final byte[] bytecode;
+    private final String className;
     private final Phase failedPhase;
     private final boolean successful;
+    private final List<String> compilationErrors;
 
     public CompilationResult(ParseResult parseResult, SemanticResult semanticResult,
-                           boolean executionSuccessful, List<String> executionErrors) {
+                           byte[] bytecode, String className, List<String> compilationErrors) {
         this.parseResult = parseResult;
         this.semanticResult = semanticResult;
-        this.executionSuccessful = executionSuccessful;
-        this.executionErrors = new ArrayList<>(executionErrors);
+        this.bytecode = bytecode;
+        this.className = className;
+        this.compilationErrors = new ArrayList<>(compilationErrors);
 
         // Determine which phase failed and overall success
-        if (!parseResult.isSuccessful()) {
+        if (parseResult != null && !parseResult.isSuccessful()) {
             this.failedPhase = Phase.PARSING;
             this.successful = false;
-        } else if (!semanticResult.isSuccessful()) {
+        } else if (semanticResult != null && !semanticResult.isSuccessful()) {
             this.failedPhase = Phase.SEMANTIC_ANALYSIS;
             this.successful = false;
-        } else if (!executionSuccessful) {
-            this.failedPhase = Phase.EXECUTION;
+        } else if (bytecode == null) {
+            this.failedPhase = Phase.CODE_GENERATION;
             this.successful = false;
         } else {
             this.failedPhase = null;
@@ -47,20 +49,21 @@ public class CompilationResult {
     }
 
     public static CompilationResult parseFailure(ParseResult parseResult) {
-        return new CompilationResult(parseResult, null, false, new ArrayList<>());
+        return new CompilationResult(parseResult, null, null, null, new ArrayList<>());
     }
 
     public static CompilationResult semanticFailure(ParseResult parseResult, SemanticResult semanticResult) {
-        return new CompilationResult(parseResult, semanticResult, false, new ArrayList<>());
+        return new CompilationResult(parseResult, semanticResult, null, null, new ArrayList<>());
     }
 
-    public static CompilationResult executionFailure(ParseResult parseResult, SemanticResult semanticResult,
-                                                   List<String> executionErrors) {
-        return new CompilationResult(parseResult, semanticResult, false, executionErrors);
+    public static CompilationResult codeGenerationFailure(ParseResult parseResult, SemanticResult semanticResult,
+                                                        List<String> codeGenErrors) {
+        return new CompilationResult(parseResult, semanticResult, null, null, codeGenErrors);
     }
 
-    public static CompilationResult success(ParseResult parseResult, SemanticResult semanticResult) {
-        return new CompilationResult(parseResult, semanticResult, true, new ArrayList<>());
+    public static CompilationResult success(ParseResult parseResult, SemanticResult semanticResult,
+                                          byte[] bytecode, String className) {
+        return new CompilationResult(parseResult, semanticResult, bytecode, className, new ArrayList<>());
     }
 
     /**
@@ -78,17 +81,24 @@ public class CompilationResult {
     }
 
     /**
-     * @return true if execution was successful
+     * @return the compiled bytecode, or null if compilation failed
      */
-    public boolean isExecutionSuccessful() {
-        return executionSuccessful;
+    public byte[] getBytecode() {
+        return bytecode != null ? bytecode.clone() : null;
     }
 
     /**
-     * @return list of execution errors
+     * @return the class name of the compiled program
      */
-    public List<String> getExecutionErrors() {
-        return new ArrayList<>(executionErrors);
+    public String getClassName() {
+        return className;
+    }
+
+    /**
+     * @return list of code generation errors
+     */
+    public List<String> getCompilationErrors() {
+        return new ArrayList<>(compilationErrors);
     }
 
     /**
@@ -133,8 +143,8 @@ public class CompilationResult {
             allErrors.addAll(semanticResult.getErrors());
         }
 
-        if (!executionSuccessful) {
-            allErrors.addAll(executionErrors);
+        if (!compilationErrors.isEmpty()) {
+            allErrors.addAll(compilationErrors);
         }
 
         return allErrors;
