@@ -11,17 +11,19 @@ import java.io.PrintStream;
 
 /**
  * Integration test suite for the Sigma compiler.
- * Tests the complete compilation and execution pipeline.
+ * Tests the complete compilation and execution pipeline with proper separation.
  */
 public class SigmaCompilerIntegrationTest {
 
     private SigmaCompiler compiler;
+    private SigmaRunner runner;
     private ByteArrayOutputStream outputStream;
     private PrintStream originalOut;
 
     @BeforeEach
     void setUp() {
         compiler = new SigmaCompiler();
+        runner = new SigmaRunner();
         // Capture System.out for testing print statements
         originalOut = System.out;
         outputStream = new ByteArrayOutputStream();
@@ -40,6 +42,29 @@ public class SigmaCompilerIntegrationTest {
         return outputStream.toString();
     }
 
+    /**
+     * Helper method to compile and run code with proper separation
+     */
+    private void compileAndRun(String code) {
+        // Step 1: Compile
+        CompilationResult result = compiler.compile(code);
+
+        // Step 2: Verify compilation success
+        if (!result.isSuccessful()) {
+            fail("Compilation failed: " + result.getAllMessagesAsString());
+        }
+
+        // Step 3: Execute
+        assertDoesNotThrow(() -> runner.run(result));
+    }
+
+    /**
+     * Helper method to compile code and return result (without execution)
+     */
+    private CompilationResult compileOnly(String code) {
+        return compiler.compile(code);
+    }
+
     @Test
     void testVariableDeclarations() {
         String code = """
@@ -49,7 +74,7 @@ public class SigmaCompilerIntegrationTest {
             boolean flag = true;
             """;
 
-        assertDoesNotThrow(() -> compiler.compileAndRun(code));
+        compileAndRun(code);
     }
 
     @Test
@@ -70,7 +95,7 @@ public class SigmaCompilerIntegrationTest {
             println("Remainder: " + remainder);
             """;
 
-        assertDoesNotThrow(() -> compiler.compileAndRun(code));
+        compileAndRun(code);
 
         String output = getOutput();
         assertTrue(output.contains("Sum: 15"));
@@ -90,7 +115,7 @@ public class SigmaCompilerIntegrationTest {
             println("Full name: " + fullName);
             """;
 
-        assertDoesNotThrow(() -> compiler.compileAndRun(code));
+        compileAndRun(code);
 
         String output = getOutput();
         assertTrue(output.contains("Full name: John Doe"));
@@ -114,7 +139,7 @@ public class SigmaCompilerIntegrationTest {
             }
             """;
 
-        assertDoesNotThrow(() -> compiler.compileAndRun(code));
+        compileAndRun(code);
 
         String output = getOutput();
         assertTrue(output.contains("x is greater than 5"));
@@ -132,7 +157,7 @@ public class SigmaCompilerIntegrationTest {
             }
             """;
 
-        assertDoesNotThrow(() -> compiler.compileAndRun(code));
+        compileAndRun(code);
 
         String output = getOutput();
         assertTrue(output.contains("Count: 0"));
@@ -155,7 +180,7 @@ public class SigmaCompilerIntegrationTest {
             println("NOT: " + notResult);
             """;
 
-        assertDoesNotThrow(() -> compiler.compileAndRun(code));
+        compileAndRun(code);
 
         String output = getOutput();
         assertTrue(output.contains("AND: false"));
@@ -184,7 +209,7 @@ public class SigmaCompilerIntegrationTest {
             println("Greater or Equal: " + greaterEqual);
             """;
 
-        assertDoesNotThrow(() -> compiler.compileAndRun(code));
+        compileAndRun(code);
 
         String output = getOutput();
         assertTrue(output.contains("Less: true"));
@@ -207,7 +232,7 @@ public class SigmaCompilerIntegrationTest {
             }
             """;
 
-        assertDoesNotThrow(() -> compiler.compileAndRun(code));
+        compileAndRun(code);
 
         String output = getOutput();
         assertTrue(output.contains("String is null"));
@@ -223,7 +248,7 @@ public class SigmaCompilerIntegrationTest {
             println("Result: " + result);
             """;
 
-        assertDoesNotThrow(() -> compiler.compileAndRun(code));
+        compileAndRun(code);
 
         String output = getOutput();
         assertTrue(output.contains("Result: 45.14"));
@@ -268,7 +293,7 @@ public class SigmaCompilerIntegrationTest {
 
         // This test might fail due to method call limitations
         // But we can test that it compiles successfully
-        CompilationResult result = compiler.compile(code);
+        CompilationResult result = compileOnly(code);
         if (!result.isSuccessful()) {
             // If compilation fails, check that it's due to expected limitations
             String errors = result.getAllMessagesAsString();
@@ -276,7 +301,7 @@ public class SigmaCompilerIntegrationTest {
             assertTrue(result.getParseResult().isSuccessful(), "Parsing should succeed");
         } else {
             // If compilation succeeds, try running it
-            assertDoesNotThrow(() -> compiler.compileAndRun(code));
+            assertDoesNotThrow(() -> runner.run(result));
         }
     }
 
@@ -284,7 +309,7 @@ public class SigmaCompilerIntegrationTest {
     void testCompilationPhases() {
         // Test that we can access individual compilation phases
         String validCode = "int x = 5;";
-        CompilationResult result = compiler.compile(validCode);
+        CompilationResult result = compileOnly(validCode);
 
         assertTrue(result.isSuccessful());
         assertNotNull(result.getParseResult());
@@ -296,7 +321,7 @@ public class SigmaCompilerIntegrationTest {
     @Test
     void testParseFailure() {
         String invalidCode = "int x = 5 +;";  // Syntax error
-        CompilationResult result = compiler.compile(invalidCode);
+        CompilationResult result = compileOnly(invalidCode);
 
         assertFalse(result.isSuccessful());
         assertEquals(CompilationResult.Phase.PARSING, result.getFailedPhase());
@@ -307,7 +332,7 @@ public class SigmaCompilerIntegrationTest {
     @Test
     void testSemanticFailure() {
         String codeWithSemanticError = "int x = undefinedVariable;";
-        CompilationResult result = compiler.compile(codeWithSemanticError);
+        CompilationResult result = compileOnly(codeWithSemanticError);
 
         assertFalse(result.isSuccessful());
         assertEquals(CompilationResult.Phase.SEMANTIC_ANALYSIS, result.getFailedPhase());
@@ -322,7 +347,7 @@ public class SigmaCompilerIntegrationTest {
             x = 5;
             """;
 
-        CompilationResult result = compiler.compile(codeWithWarnings);
+        CompilationResult result = compileOnly(codeWithWarnings);
         assertTrue(result.isSuccessful());
         assertTrue(result.hasWarnings());
         assertTrue(result.getAllWarnings().size() > 0);
@@ -347,7 +372,7 @@ public class SigmaCompilerIntegrationTest {
             println("Back to outer scope");
             """;
 
-        assertDoesNotThrow(() -> compiler.compileAndRun(code));
+        compileAndRun(code);
 
         String output = getOutput();
         assertTrue(output.contains("x: 10"));
@@ -362,6 +387,40 @@ public class SigmaCompilerIntegrationTest {
         CompilationResult result = compiler.compileFile("nonexistent.sigma");
         assertFalse(result.isSuccessful());
         assertTrue(result.getAllErrors().size() > 0);
+    }
+
+    @Test
+    void testRunnerSeparation() {
+        // Test that the runner is properly separated
+        String code = "int x = 5; println(\"x = \" + x);";
+
+        // Step 1: Compile only
+        CompilationResult result = compileOnly(code);
+        assertTrue(result.isSuccessful());
+
+        // Step 2: Execute separately
+        assertDoesNotThrow(() -> runner.run(result));
+
+        String output = getOutput();
+        assertTrue(output.contains("x = 5"));
+    }
+
+    @Test
+    void testRunnerErrorHandling() {
+        // Test that runner properly handles execution errors
+        String code = "int x = 5;";
+        CompilationResult result = compileOnly(code);
+        assertTrue(result.isSuccessful());
+
+        // Test safe execution
+        assertTrue(runner.runSafely(result));
+
+        // Test error when trying to run failed compilation
+        CompilationResult failedResult = compileOnly("int x = 5 +;");
+        assertFalse(failedResult.isSuccessful());
+
+        assertThrows(IllegalArgumentException.class, () -> runner.run(failedResult));
+        assertFalse(runner.runSafely(failedResult));
     }
 
     @Test

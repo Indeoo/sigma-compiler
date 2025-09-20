@@ -53,36 +53,6 @@ public class SigmaCompiler {
         }
     }
 
-    /**
-     * Compile and run a Sigma program from source code
-     *
-     * @param sourceCode the Sigma source code to compile and run
-     */
-    public void compileAndRun(String sourceCode) {
-        CompilationResult result = compile(sourceCode);
-
-        if (!result.isSuccessful()) {
-            System.err.println("Compilation failed:");
-            System.err.println(result.getAllMessagesAsString());
-            return;
-        }
-
-        // Display warnings if any
-        if (result.hasWarnings()) {
-            System.err.println("Compilation warnings:");
-            result.getAllWarnings().forEach(warning -> System.err.println("Warning: " + warning));
-        }
-
-        try {
-            // Step 3: Interpretation/Execution
-            SigmaInterpreter interpreter = new SigmaInterpreter(result.getSemanticResult().getSymbolTable());
-            interpreter.visit(result.getParseResult().getParseTree());
-
-        } catch (Exception e) {
-            System.err.println("Execution error: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
 
     /**
      * Compile a Sigma program from a file and return the result
@@ -100,19 +70,6 @@ public class SigmaCompiler {
         }
     }
 
-    /**
-     * Compile and run a Sigma program from a file
-     *
-     * @param filename path to the Sigma source file
-     */
-    public void compileAndRunFile(String filename) {
-        try {
-            String sourceCode = Files.readString(Paths.get(filename));
-            compileAndRun(sourceCode);
-        } catch (IOException e) {
-            System.err.println("Error reading file: " + e.getMessage());
-        }
-    }
 
     /**
      * Get the parser instance (for testing)
@@ -130,6 +87,7 @@ public class SigmaCompiler {
 
     public static void main(String[] args) {
         SigmaCompiler compiler = new SigmaCompiler();
+        SigmaRunner runner = new SigmaRunner();
 
         if (args.length == 0) {
             // Interactive mode - simple example
@@ -139,12 +97,45 @@ public class SigmaCompiler {
                 println("Hello, Sigma!");
                 """;
 
-            compiler.compileAndRun(sampleCode);
+            // Step 1: Compile
+            CompilationResult result = compiler.compile(sampleCode);
+
+            // Step 2: Handle compilation result
+            if (!result.isSuccessful()) {
+                System.err.println("Compilation failed:");
+                System.err.println(result.getAllMessagesAsString());
+                return;
+            }
+
+            // Step 3: Execute (separate responsibility)
+            try {
+                runner.run(result);
+            } catch (Exception e) {
+                System.err.println("Execution failed: " + e.getMessage());
+            }
+
         } else {
             // File mode
             for (String filename : args) {
                 System.out.println("Compiling: " + filename);
-                compiler.compileAndRunFile(filename);
+
+                // Step 1: Compile file
+                CompilationResult result = compiler.compileFile(filename);
+
+                // Step 2: Handle compilation result
+                if (!result.isSuccessful()) {
+                    System.err.println("Compilation of " + filename + " failed:");
+                    System.err.println(result.getAllMessagesAsString());
+                    continue; // Try next file
+                }
+
+                // Step 3: Execute (separate responsibility)
+                System.out.println("Executing: " + filename);
+                try {
+                    runner.run(result);
+                } catch (Exception e) {
+                    System.err.println("Execution of " + filename + " failed: " + e.getMessage());
+                }
             }
         }
     }
