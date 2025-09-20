@@ -1,13 +1,12 @@
 package org.example;
 
 import org.example.parser.*;
+import org.example.runner.SigmaRunner;
 import org.example.semantic.*;
-import org.example.interpreter.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
 /**

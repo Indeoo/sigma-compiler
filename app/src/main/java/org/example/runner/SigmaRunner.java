@@ -1,6 +1,7 @@
-package org.example;
+package org.example.runner;
 
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.example.CompilationResult;
 import org.example.interpreter.SigmaInterpreter;
 import org.example.semantic.SymbolTable;
 

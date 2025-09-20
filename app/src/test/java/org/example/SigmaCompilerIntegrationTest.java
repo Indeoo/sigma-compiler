@@ -1,6 +1,7 @@
 package org.example;
 
 import org.example.parser.ParseResult;
+import org.example.runner.SigmaRunner;
 import org.example.semantic.SemanticResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
