@@ -6,16 +6,16 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Comprehensive test suite for the SigmaParser class.
+ * Comprehensive test suite for the SigmaParserWrapper class.
  * Tests lexical analysis, syntax analysis, and error reporting.
  */
-public class SigmaParserTest {
+public class SigmaParserWrapperTest {
 
-    private SigmaParser parser;
+    private SigmaParserWrapper parser;
 
     @BeforeEach
     void setUp() {
-        parser = new SigmaParser();
+        parser = new SigmaParserWrapper();
     }
 
     @Test

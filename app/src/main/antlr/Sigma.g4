@@ -1,4 +1,4 @@
-grammar BasicGroovy;
+grammar Sigma;
 
 // Parser rules
 compilationUnit

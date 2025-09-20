@@ -1,8 +1,8 @@
 package org.example.semantic;
 
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.example.parser.BasicGroovyBaseVisitor;
-import org.example.parser.BasicGroovyParser;
+import org.example.parser.SigmaBaseVisitor;
+import org.example.parser.SigmaParser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.List;
  * Performs type checking, scope analysis, and symbol resolution.
  * Returns a SemanticResult containing the symbol table and any errors/warnings.
  */
-public class SigmaSemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
+public class SigmaSemanticAnalyzer extends SigmaBaseVisitor<SigmaType> {
 
     private SymbolTable symbolTable;
     private List<String> errors;
@@ -81,18 +81,18 @@ public class SigmaSemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
     }
 
     @Override
-    public SigmaType visitCompilationUnit(BasicGroovyParser.CompilationUnitContext ctx) {
-        for (BasicGroovyParser.DeclarationContext decl : ctx.declaration()) {
+    public SigmaType visitCompilationUnit(SigmaParser.CompilationUnitContext ctx) {
+        for (SigmaParser.DeclarationContext decl : ctx.declaration()) {
             visit(decl);
         }
-        for (BasicGroovyParser.StatementContext stmt : ctx.statement()) {
+        for (SigmaParser.StatementContext stmt : ctx.statement()) {
             visit(stmt);
         }
         return SigmaType.VOID;
     }
 
     @Override
-    public SigmaType visitVariableDeclaration(BasicGroovyParser.VariableDeclarationContext ctx) {
+    public SigmaType visitVariableDeclaration(SigmaParser.VariableDeclarationContext ctx) {
         String varName = ctx.IDENTIFIER().getText();
         SigmaType varType = getTypeFromContext(ctx.type());
 
@@ -123,7 +123,7 @@ public class SigmaSemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
     }
 
     @Override
-    public SigmaType visitMethodDeclaration(BasicGroovyParser.MethodDeclarationContext ctx) {
+    public SigmaType visitMethodDeclaration(SigmaParser.MethodDeclarationContext ctx) {
         String methodName = ctx.IDENTIFIER().getText();
         SigmaType returnType = getTypeFromContext(ctx.type());
 
@@ -156,15 +156,15 @@ public class SigmaSemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
     }
 
     @Override
-    public SigmaType visitParameterList(BasicGroovyParser.ParameterListContext ctx) {
-        for (BasicGroovyParser.ParameterContext param : ctx.parameter()) {
+    public SigmaType visitParameterList(SigmaParser.ParameterListContext ctx) {
+        for (SigmaParser.ParameterContext param : ctx.parameter()) {
             visit(param);
         }
         return SigmaType.VOID;
     }
 
     @Override
-    public SigmaType visitParameter(BasicGroovyParser.ParameterContext ctx) {
+    public SigmaType visitParameter(SigmaParser.ParameterContext ctx) {
         String paramName = ctx.IDENTIFIER().getText();
         SigmaType paramType = getTypeFromContext(ctx.type());
 
@@ -181,7 +181,7 @@ public class SigmaSemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
     }
 
     @Override
-    public SigmaType visitClassDeclaration(BasicGroovyParser.ClassDeclarationContext ctx) {
+    public SigmaType visitClassDeclaration(SigmaParser.ClassDeclarationContext ctx) {
         String className = ctx.IDENTIFIER().getText();
 
         if (symbolTable.isDefinedInCurrentScope(className)) {
@@ -201,7 +201,7 @@ public class SigmaSemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
     }
 
     @Override
-    public SigmaType visitAssignmentStatement(BasicGroovyParser.AssignmentStatementContext ctx) {
+    public SigmaType visitAssignmentStatement(SigmaParser.AssignmentStatementContext ctx) {
         String varName = ctx.IDENTIFIER().getText();
         Symbol symbol = symbolTable.lookup(varName);
 
@@ -225,7 +225,7 @@ public class SigmaSemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
     }
 
     @Override
-    public SigmaType visitIfStatement(BasicGroovyParser.IfStatementContext ctx) {
+    public SigmaType visitIfStatement(SigmaParser.IfStatementContext ctx) {
         SigmaType conditionType = visit(ctx.expression());
         if (conditionType != SigmaType.BOOLEAN && conditionType != SigmaType.UNKNOWN) {
             addError("If condition must be boolean, got " + conditionType);
@@ -245,7 +245,7 @@ public class SigmaSemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
     }
 
     @Override
-    public SigmaType visitWhileStatement(BasicGroovyParser.WhileStatementContext ctx) {
+    public SigmaType visitWhileStatement(SigmaParser.WhileStatementContext ctx) {
         SigmaType conditionType = visit(ctx.expression());
         if (conditionType != SigmaType.BOOLEAN && conditionType != SigmaType.UNKNOWN) {
             addError("While condition must be boolean, got " + conditionType);
@@ -259,7 +259,7 @@ public class SigmaSemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
     }
 
     @Override
-    public SigmaType visitReturnStatement(BasicGroovyParser.ReturnStatementContext ctx) {
+    public SigmaType visitReturnStatement(SigmaParser.ReturnStatementContext ctx) {
         if (currentMethodReturnType == null) {
             addError("Return statement outside of method");
             return SigmaType.UNKNOWN;
@@ -280,9 +280,9 @@ public class SigmaSemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
     }
 
     @Override
-    public SigmaType visitBlock(BasicGroovyParser.BlockContext ctx) {
+    public SigmaType visitBlock(SigmaParser.BlockContext ctx) {
         symbolTable.enterScope("block");
-        for (BasicGroovyParser.StatementContext stmt : ctx.statement()) {
+        for (SigmaParser.StatementContext stmt : ctx.statement()) {
             visit(stmt);
         }
         symbolTable.exitScope();
@@ -290,7 +290,7 @@ public class SigmaSemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
     }
 
     @Override
-    public SigmaType visitExpression(BasicGroovyParser.ExpressionContext ctx) {
+    public SigmaType visitExpression(SigmaParser.ExpressionContext ctx) {
         if (ctx.primary() != null) {
             return visit(ctx.primary());
         }
@@ -362,7 +362,7 @@ public class SigmaSemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
     }
 
     @Override
-    public SigmaType visitPrimary(BasicGroovyParser.PrimaryContext ctx) {
+    public SigmaType visitPrimary(SigmaParser.PrimaryContext ctx) {
         if (ctx.IDENTIFIER() != null) {
             String varName = ctx.IDENTIFIER().getText();
 
@@ -389,7 +389,7 @@ public class SigmaSemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
     }
 
     @Override
-    public SigmaType visitLiteral(BasicGroovyParser.LiteralContext ctx) {
+    public SigmaType visitLiteral(SigmaParser.LiteralContext ctx) {
         if (ctx.INTEGER() != null) {
             return SigmaType.INT;
         } else if (ctx.FLOAT() != null) {
@@ -405,11 +405,11 @@ public class SigmaSemanticAnalyzer extends BasicGroovyBaseVisitor<SigmaType> {
     }
 
     // Helper methods
-    private SigmaType getTypeFromContext(BasicGroovyParser.TypeContext ctx) {
+    private SigmaType getTypeFromContext(SigmaParser.TypeContext ctx) {
         return SigmaType.fromString(ctx.getText());
     }
 
-    private String getOperatorFromContext(BasicGroovyParser.ExpressionContext ctx) {
+    private String getOperatorFromContext(SigmaParser.ExpressionContext ctx) {
         for (int i = 0; i < ctx.getChildCount(); i++) {
             ParseTree child = ctx.getChild(i);
             String text = child.getText();

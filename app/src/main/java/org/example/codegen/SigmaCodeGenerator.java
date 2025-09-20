@@ -1,8 +1,8 @@
 package org.example.codegen;
 
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.example.parser.BasicGroovyBaseVisitor;
-import org.example.parser.BasicGroovyParser;
+import org.example.parser.SigmaBaseVisitor;
+import org.example.parser.SigmaParser;
 import org.example.semantic.SymbolTable;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -17,7 +17,7 @@ import static org.objectweb.asm.Opcodes.*;
  * Code generator that produces JVM bytecode from a Sigma AST.
  * Uses ASM library to generate executable Java bytecode.
  */
-public class SigmaCodeGenerator extends BasicGroovyBaseVisitor<Void> {
+public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
 
     private final SymbolTable symbolTable;
     private final String className;
@@ -85,19 +85,19 @@ public class SigmaCodeGenerator extends BasicGroovyBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitCompilationUnit(BasicGroovyParser.CompilationUnitContext ctx) {
+    public Void visitCompilationUnit(SigmaParser.CompilationUnitContext ctx) {
         // Visit all declarations and statements in the compilation unit
-        for (BasicGroovyParser.DeclarationContext decl : ctx.declaration()) {
+        for (SigmaParser.DeclarationContext decl : ctx.declaration()) {
             visit(decl);
         }
-        for (BasicGroovyParser.StatementContext stmt : ctx.statement()) {
+        for (SigmaParser.StatementContext stmt : ctx.statement()) {
             visit(stmt);
         }
         return null;
     }
 
     @Override
-    public Void visitStatement(BasicGroovyParser.StatementContext ctx) {
+    public Void visitStatement(SigmaParser.StatementContext ctx) {
         if (ctx.assignmentStatement() != null) {
             visit(ctx.assignmentStatement());
         } else if (ctx.expressionStatement() != null) {
@@ -115,7 +115,7 @@ public class SigmaCodeGenerator extends BasicGroovyBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitVariableDeclaration(BasicGroovyParser.VariableDeclarationContext ctx) {
+    public Void visitVariableDeclaration(SigmaParser.VariableDeclarationContext ctx) {
         // For now, skip variable declarations in bytecode
         // In a full implementation, we'd allocate local variables
         if (ctx.expression() != null) {
@@ -125,13 +125,13 @@ public class SigmaCodeGenerator extends BasicGroovyBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitExpressionStatement(BasicGroovyParser.ExpressionStatementContext ctx) {
+    public Void visitExpressionStatement(SigmaParser.ExpressionStatementContext ctx) {
         visit(ctx.expression());
         return null;
     }
 
     @Override
-    public Void visitExpression(BasicGroovyParser.ExpressionContext ctx) {
+    public Void visitExpression(SigmaParser.ExpressionContext ctx) {
         if (ctx.primary() != null) {
             // Simple primary expression
             visit(ctx.primary());
@@ -148,9 +148,9 @@ public class SigmaCodeGenerator extends BasicGroovyBaseVisitor<Void> {
         return null;
     }
 
-    private void handleMethodCall(BasicGroovyParser.ExpressionContext ctx) {
+    private void handleMethodCall(SigmaParser.ExpressionContext ctx) {
         // Get the method name from the left expression
-        BasicGroovyParser.ExpressionContext leftExpr = ctx.expression(0);
+        SigmaParser.ExpressionContext leftExpr = ctx.expression(0);
         String methodName = null;
 
         // Extract method name from various possible structures
@@ -178,7 +178,7 @@ public class SigmaCodeGenerator extends BasicGroovyBaseVisitor<Void> {
         }
     }
 
-    private void handleBinaryOperation(BasicGroovyParser.ExpressionContext ctx) {
+    private void handleBinaryOperation(SigmaParser.ExpressionContext ctx) {
         String operator = ctx.getChild(1).getText();
 
         if ("+".equals(operator)) {
@@ -197,7 +197,7 @@ public class SigmaCodeGenerator extends BasicGroovyBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitPrimary(BasicGroovyParser.PrimaryContext ctx) {
+    public Void visitPrimary(SigmaParser.PrimaryContext ctx) {
         if (ctx.IDENTIFIER() != null) {
             String varName = ctx.IDENTIFIER().getText();
             // For simplicity, push variable name as string
@@ -210,7 +210,7 @@ public class SigmaCodeGenerator extends BasicGroovyBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitLiteral(BasicGroovyParser.LiteralContext ctx) {
+    public Void visitLiteral(SigmaParser.LiteralContext ctx) {
         if (ctx.STRING() != null) {
             String value = ctx.STRING().getText();
             // Remove quotes

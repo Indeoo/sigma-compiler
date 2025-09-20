@@ -1,7 +1,7 @@
 package org.example.semantic;
 
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.example.parser.SigmaParser;
+import org.example.parser.SigmaParserWrapper;
 import org.example.parser.ParseResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,12 +13,12 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class SigmaSemanticAnalyzerTest {
 
-    private SigmaParser parser;
+    private SigmaParserWrapper parser;
     private SigmaSemanticAnalyzer analyzer;
 
     @BeforeEach
     void setUp() {
-        parser = new SigmaParser();
+        parser = new SigmaParserWrapper();
         analyzer = new SigmaSemanticAnalyzer();
     }
 

@@ -3,6 +3,11 @@ package org.example;
 import org.example.runner.SigmaRunner;
 
 public class CompilerApp {
+    private static final String SAMPLE_CODE = """
+                int x = 10;
+                println("Hello, Sigma!");
+                int y = x + 10;
+                """;
 
     public static void main(String[] args) {
         SigmaCompiler compiler = new SigmaCompiler();
@@ -11,13 +16,9 @@ public class CompilerApp {
         if (args.length == 0) {
             // Interactive mode - simple example
             System.out.println("Sigma Compiler - Interactive Mode");
-            String sampleCode = """
-                int x = 10;
-                println("Hello, Sigma!");
-                """;
 
             // Step 1: Compile
-            CompilationResult result = compiler.compile(sampleCode);
+            CompilationResult result = compiler.compile(SAMPLE_CODE);
 
             // Step 2: Handle compilation result
             if (!result.isSuccessful()) {

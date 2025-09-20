@@ -15,11 +15,11 @@ import java.util.List;
  */
 public class SigmaCompiler {
 
-    private final SigmaParser parser;
+    private final SigmaParserWrapper parser;
     private final SigmaSemanticAnalyzer semanticAnalyzer;
 
     public SigmaCompiler() {
-        this.parser = new SigmaParser();
+        this.parser = new SigmaParserWrapper();
         this.semanticAnalyzer = new SigmaSemanticAnalyzer();
     }
 
@@ -100,7 +100,7 @@ public class SigmaCompiler {
     /**
      * Get the parser instance (for testing)
      */
-    public SigmaParser getParser() {
+    public SigmaParserWrapper getParser() {
         return parser;
     }
 

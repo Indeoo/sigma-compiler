@@ -12,7 +12,7 @@ import java.nio.file.Paths;
  * Parser for the Sigma programming language.
  * Handles lexical analysis (tokenization) and syntax analysis (parse tree generation).
  */
-public class SigmaParser {
+public class SigmaParserWrapper {
 
     /**
      * Parse Sigma source code and return a ParseResult
@@ -26,18 +26,19 @@ public class SigmaParser {
 
             // Step 1: Lexical analysis
             CharStream input = CharStreams.fromString(sourceCode);
-            BasicGroovyLexer lexer = new BasicGroovyLexer(input);
+            SigmaLexer lexer = new SigmaLexer(input);
             lexer.removeErrorListeners();
             lexer.addErrorListener(errorListener);
 
             // Step 2: Syntax analysis
             CommonTokenStream tokens = new CommonTokenStream(lexer);
-            BasicGroovyParser parser = new BasicGroovyParser(tokens);
-            parser.removeErrorListeners();
-            parser.addErrorListener(errorListener);
+            // Use the ANTLR-generated parser
+            SigmaParser antlrParser = new SigmaParser(tokens);
+            antlrParser.removeErrorListeners();
+            antlrParser.addErrorListener(errorListener);
 
             // Parse starting from compilation unit
-            ParseTree tree = parser.compilationUnit();
+            ParseTree tree = antlrParser.compilationUnit();
 
             if (errorListener.hasErrors()) {
                 return ParseResult.failure(errorListener.getErrors());
