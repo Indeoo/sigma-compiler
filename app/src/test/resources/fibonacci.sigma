@@ -1,0 +1,21 @@
+// Fibonacci sequence in Sigma language
+
+int fibonacci(int n) {
+    if (n <= 1) {
+        return n;
+    } else {
+        return fibonacci(n - 1) + fibonacci(n - 2);
+    }
+}
+
+void printFibonacci(int count) {
+    println("Fibonacci sequence:");
+    int i = 0;
+    while (i < count) {
+        int fib = fibonacci(i);
+        println("F(" + i + ") = " + fib);
+        i = i + 1;
+    }
+}
+
+printFibonacci(10);

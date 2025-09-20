@@ -1,0 +1,29 @@
+// Class example in Sigma language
+
+class Calculator {
+    double add(double a, double b) {
+        return a + b;
+    }
+
+    double multiply(double a, double b) {
+        return a * b;
+    }
+
+    double power(double base, int exponent) {
+        double result = 1.0;
+        int i = 0;
+        while (i < exponent) {
+            result = result * base;
+            i = i + 1;
+        }
+        return result;
+    }
+}
+
+double result1 = add(5.0, 3.0);
+double result2 = multiply(4.0, 2.5);
+double result3 = power(2.0, 8);
+
+println("5.0 + 3.0 = " + result1);
+println("4.0 * 2.5 = " + result2);
+println("2.0 ^ 8 = " + result3);

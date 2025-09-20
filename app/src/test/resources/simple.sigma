@@ -1,0 +1,3 @@
+int x = 5;
+println("Hello, World!");
+println("x = " + x);

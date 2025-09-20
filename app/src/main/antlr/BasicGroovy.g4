@@ -104,6 +104,8 @@ type
     ;
 
 // Lexer rules
+BOOLEAN : 'true' | 'false' ;
+
 IDENTIFIER : [a-zA-Z_][a-zA-Z_0-9]* ;
 
 INTEGER : [0-9]+ ;
@@ -111,8 +113,6 @@ INTEGER : [0-9]+ ;
 FLOAT : [0-9]+ '.' [0-9]+ ;
 
 STRING : '"' ( ~["\\\r\n] | '\\' . )* '"' ;
-
-BOOLEAN : 'true' | 'false' ;
 
 // Skip whitespace and comments
 WS : [ \t\r\n]+ -> skip ;

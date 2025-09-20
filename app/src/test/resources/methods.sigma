@@ -1,0 +1,6 @@
+int add(int a, int b) {
+    return a + b;
+}
+
+int result = add(3, 5);
+println("3 + 5 = " + result);

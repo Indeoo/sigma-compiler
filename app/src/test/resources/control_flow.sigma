@@ -1,0 +1,49 @@
+int grade = 85;
+
+if (grade >= 90) {
+    println("Grade: A");
+} else {
+    if (grade >= 80) {
+        println("Grade: B");
+    } else {
+        if (grade >= 70) {
+            println("Grade: C");
+        } else {
+            if (grade >= 60) {
+                println("Grade: D");
+            } else {
+                println("Grade: F");
+            }
+        }
+    }
+}
+
+println("Counting down:");
+int countdown = 5;
+while (countdown > 0) {
+    println(countdown);
+    countdown = countdown - 1;
+}
+println("Blast off!");
+
+int isPrime(int n) {
+    if (n <= 1) {
+        return 0;
+    }
+    int i = 2;
+    while (i * i <= n) {
+        if (n % i == 0) {
+            return 0;
+        }
+        i = i + 1;
+    }
+    return 1;
+}
+
+int number = 17;
+int primeResult = isPrime(number);
+if (primeResult == 1) {
+    println(number + " is prime");
+} else {
+    println(number + " is not prime");
+}

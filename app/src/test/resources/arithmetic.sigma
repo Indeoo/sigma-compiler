@@ -1,0 +1,20 @@
+// Arithmetic operations in Sigma language
+
+int a = 15;
+int b = 4;
+
+println("a = " + a);
+println("b = " + b);
+println("a + b = " + (a + b));
+println("a - b = " + (a - b));
+println("a * b = " + (a * b));
+println("a / b = " + (a / b));
+println("a % b = " + (a % b));
+
+double x = 10.5;
+double y = 3.2;
+
+println("x = " + x);
+println("y = " + y);
+println("x + y = " + (x + y));
+println("x * y = " + (x * y));

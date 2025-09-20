@@ -1,0 +1,13 @@
+int grade = 85;
+
+if (grade >= 80) {
+    println("Grade: B");
+} else {
+    println("Grade: not B");
+}
+
+int countdown = 3;
+while (countdown > 0) {
+    println("Count: " + countdown);
+    countdown = countdown - 1;
+}
