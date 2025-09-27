@@ -1,0 +1,4 @@
+println("Hello from hello.sigma");
+int a = 7;
+int b = a * 3;
+println(b);

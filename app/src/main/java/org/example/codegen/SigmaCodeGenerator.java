@@ -30,6 +30,7 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
 
     // Variable tracking for local variable slots
     private final Map<String, Integer> variableSlots;
+    private final Map<String, org.example.semantic.SigmaType> variableTypes;
     private int nextLocalVarSlot;
 
     public SigmaCodeGenerator(SymbolTable symbolTable, String className) {
@@ -37,6 +38,7 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
         this.className = className;
         this.errors = new ArrayList<>();
         this.variableSlots = new HashMap<>();
+        this.variableTypes = new HashMap<>();
         this.nextLocalVarSlot = 1; // Slot 0 reserved for 'this' in non-static methods, but we're using static main
     }
 
@@ -131,6 +133,12 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
         int slot = nextLocalVarSlot++;
         variableSlots.put(varName, slot);
 
+        // Record declared type (if available)
+        Symbol symbolForType = symbolTable.lookup(varName);
+        if (symbolForType != null) {
+            variableTypes.put(varName, symbolForType.getType());
+        }
+
         // If there's an initialization expression, evaluate it and store the result
         if (ctx.expression() != null) {
             visit(ctx.expression());
@@ -140,11 +148,8 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
             if (symbol != null) {
                 switch (symbol.getType()) {
                     case INT:
-                        // For integers, we need to convert string result to int for now
-                        // TODO: Improve this when we have proper type handling
-                        mainMethod.invokeStatic(Type.getType(Integer.class),
-                                              Method.getMethod("Integer valueOf(String)"));
-                        mainMethod.storeLocal(slot, Type.getType(Integer.class));
+                        // Expect int on stack
+                        mainMethod.storeLocal(slot, Type.INT_TYPE);
                         break;
                     case STRING:
                     default:
@@ -158,9 +163,7 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
             Symbol symbol = symbolTable.lookup(varName);
             if (symbol != null && symbol.getType() == org.example.semantic.SigmaType.INT) {
                 mainMethod.push(0);
-                mainMethod.invokeStatic(Type.getType(Integer.class),
-                                      Method.getMethod("Integer valueOf(int)"));
-                mainMethod.storeLocal(slot, Type.getType(Integer.class));
+                mainMethod.storeLocal(slot, Type.INT_TYPE);
             }
         }
 
@@ -182,14 +185,10 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
             if (symbol != null) {
                 switch (symbol.getType()) {
                     case INT:
-                        // For integers, convert string result to int
-                        mainMethod.invokeStatic(Type.getType(Integer.class),
-                                              Method.getMethod("Integer valueOf(String)"));
-                        mainMethod.storeLocal(slot, Type.getType(Integer.class));
+                        mainMethod.storeLocal(slot, Type.INT_TYPE);
                         break;
                     case STRING:
                     default:
-                        // Store as string
                         mainMethod.storeLocal(slot, Type.getType(String.class));
                         break;
                 }
@@ -241,14 +240,23 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
 
             // Visit the argument if present
             if (ctx.argumentList() != null && ctx.argumentList().expression().size() > 0) {
-                visit(ctx.argumentList().expression(0));
+                SigmaParser.ExpressionContext argExpr = ctx.argumentList().expression(0);
+                if (expressionIsInt(argExpr)) {
+                    visit(argExpr);
+                    mainMethod.invokeVirtual(Type.getType("Ljava/io/PrintStream;"),
+                            Method.getMethod("void println (int)"));
+                    return;
+                }
+
+                // Default: evaluate and print as String
+                visit(argExpr);
             } else {
                 mainMethod.push(""); // Default empty string
             }
 
-            // Call println
+            // Call println(String)
             mainMethod.invokeVirtual(Type.getType("Ljava/io/PrintStream;"),
-                                   Method.getMethod("void println (String)"));
+                    Method.getMethod("void println (String)"));
         } else {
             // For other method calls, just visit the left expression for now
             visit(leftExpr);
@@ -259,33 +267,81 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
         String operator = ctx.getChild(1).getText();
 
         if ("+".equals(operator)) {
-            // For now, we'll assume integer arithmetic and convert to string at the end
-            // A more sophisticated compiler would do proper type analysis
+            // If both operands are ints, perform integer add; otherwise perform string concatenation
+            boolean leftInt = expressionIsInt(ctx.expression(0));
+            boolean rightInt = expressionIsInt(ctx.expression(1));
+            if (leftInt && rightInt) {
+                visit(ctx.expression(0));
+                visit(ctx.expression(1));
+                mainMethod.visitInsn(IADD);
+            } else {
+                // String concatenation via StringBuilder
+                Type sbType = Type.getType(StringBuilder.class);
+                mainMethod.newInstance(sbType);
+                mainMethod.dup();
+                mainMethod.invokeConstructor(sbType, Method.getMethod("void <init> ()"));
 
-            visit(ctx.expression(0));  // Left operand
-            visit(ctx.expression(1));  // Right operand
+                // append left
+                if (leftInt) {
+                    visit(ctx.expression(0));
+                    mainMethod.invokeVirtual(sbType, Method.getMethod("java.lang.StringBuilder append (int)"));
+                } else {
+                    visit(ctx.expression(0));
+                    mainMethod.invokeVirtual(sbType, Method.getMethod("java.lang.StringBuilder append (String)"));
+                }
 
-            // Convert both operands from string to int, add them, then convert back to string
-            // Convert second operand (top of stack) to int
-            mainMethod.invokeStatic(Type.getType(Integer.class),
-                                  Method.getMethod("Integer valueOf(String)"));
-            mainMethod.invokeVirtual(Type.getType(Integer.class),
-                                   Method.getMethod("int intValue()"));
+                // append right
+                if (rightInt) {
+                    visit(ctx.expression(1));
+                    mainMethod.invokeVirtual(sbType, Method.getMethod("java.lang.StringBuilder append (int)"));
+                } else {
+                    visit(ctx.expression(1));
+                    mainMethod.invokeVirtual(sbType, Method.getMethod("java.lang.StringBuilder append (String)"));
+                }
 
-            // Swap to get first operand on top, then convert to int
-            mainMethod.swap();
-            mainMethod.invokeStatic(Type.getType(Integer.class),
-                                  Method.getMethod("Integer valueOf(String)"));
-            mainMethod.invokeVirtual(Type.getType(Integer.class),
-                                   Method.getMethod("int intValue()"));
-
-            // Add the two integers
-            mainMethod.visitInsn(IADD);
-
-            // Convert result back to string
-            mainMethod.invokeStatic(Type.getType(String.class),
-                                  Method.getMethod("String valueOf(int)"));
+                // toString
+                mainMethod.invokeVirtual(sbType, Method.getMethod("String toString ()"));
+            }
+        } else if ("-".equals(operator)) {
+            visit(ctx.expression(0));
+            visit(ctx.expression(1));
+            mainMethod.visitInsn(ISUB);
+        } else if ("*".equals(operator)) {
+            visit(ctx.expression(0));
+            visit(ctx.expression(1));
+            mainMethod.visitInsn(IMUL);
+        } else if ("/".equals(operator)) {
+            visit(ctx.expression(0));
+            visit(ctx.expression(1));
+            mainMethod.visitInsn(IDIV);
+        } else if ("%".equals(operator)) {
+            visit(ctx.expression(0));
+            visit(ctx.expression(1));
+            mainMethod.visitInsn(IREM);
         }
+    }
+
+    /**
+     * Heuristic to determine whether an expression will push an int on the stack.
+     * Handles integer literals, identifier ints, and simple binary arithmetic expressions.
+     */
+    private boolean expressionIsInt(SigmaParser.ExpressionContext expr) {
+        if (expr == null) return false;
+        // Check for literal via primary -> literal
+        if (expr.primary() != null && expr.primary().literal() != null && expr.primary().literal().INTEGER() != null) return true;
+        if (expr.primary() != null && expr.primary().IDENTIFIER() != null) {
+            String name = expr.primary().IDENTIFIER().getText();
+            org.example.semantic.SigmaType vt = variableTypes.get(name);
+            return vt == org.example.semantic.SigmaType.INT;
+        }
+        // Binary arithmetic
+        if (expr.getChildCount() == 3 && isOperator(expr.getChild(1).getText())) {
+            String op = expr.getChild(1).getText();
+            if ("+-*/%".contains(op)) {
+                return expressionIsInt(expr.expression(0)) && expressionIsInt(expr.expression(1));
+            }
+        }
+        return false;
     }
 
     private boolean isOperator(String text) {
@@ -303,10 +359,8 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
                 // Load the variable from its local variable slot
                 Symbol symbol = symbolTable.lookup(varName);
                 if (symbol != null && symbol.getType() == org.example.semantic.SigmaType.INT) {
-                    // Load Integer object and convert to string for println
-                    mainMethod.loadLocal(slot, Type.getType(Integer.class));
-                    mainMethod.invokeVirtual(Type.getType(Integer.class),
-                                           Method.getMethod("String toString()"));
+                    // Load primitive int
+                    mainMethod.loadLocal(slot, Type.INT_TYPE);
                 } else {
                     // Load as string
                     mainMethod.loadLocal(slot, Type.getType(String.class));
@@ -331,7 +385,7 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
             mainMethod.push(value);
         } else if (ctx.INTEGER() != null) {
             int value = Integer.parseInt(ctx.INTEGER().getText());
-            mainMethod.push(String.valueOf(value)); // Convert to string for simplicity
+            mainMethod.push(value); // push primitive int
         } else if (ctx.BOOLEAN() != null) {
             String value = ctx.BOOLEAN().getText();
             mainMethod.push(value);

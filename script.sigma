@@ -1,0 +1,11 @@
+runcode println("Inline println from script");
+
+int x = 5;
+int y = x + 10;
+println("y is equal to " + y);
+
+compile hello.sigma
+
+runfile hello.sigma
+
+print Script finished

@@ -2,6 +2,13 @@ package org.example;
 
 import org.example.runner.SigmaRunner;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
 public class CompilerApp {
     private static final String SAMPLE_CODE = """
                 int x = 10;
@@ -44,21 +51,59 @@ public class CompilerApp {
             }
 
         } else {
-            // File mode
+            // File mode or script mode
             for (String filename : args) {
-                System.out.println("Compiling: " + filename);
+                Path p = Paths.get(filename);
+                System.out.println("[debug] initial path: " + p + ", exists=" + Files.exists(p));
+                // If the path doesn't exist as provided, try resolving relative to the JVM working directory
+                if (!Files.exists(p)) {
+                    // Walk upward from user.dir to find the file in ancestor directories (handles Gradle module cwd)
+                    Path cwd = Paths.get(System.getProperty("user.dir"));
+                    Path found = null;
+                    Path probe = cwd;
+                    while (probe != null) {
+                        Path candidate = probe.resolve(filename);
+                        if (Files.exists(candidate) && Files.isRegularFile(candidate)) {
+                            found = candidate;
+                            break;
+                        }
+                        probe = probe.getParent();
+                    }
+                    if (found != null) {
+                        System.out.println("[debug] resolved via ancestor search to: " + found);
+                        p = found;
+                    } else {
+                        System.out.println("[debug] file not found in ancestor search from user.dir=" + System.getProperty("user.dir"));
+                    }
+                }
 
-                // Step 1: Compile file
-                CompilationResult result = compiler.compileFile(filename);
+                if (Files.exists(p) && Files.isRegularFile(p)) {
+                    try {
+                        List<String> lines = Files.readAllLines(p, StandardCharsets.UTF_8);
+                        if (looksLikeCommandScript(lines)) {
+                            System.out.println("Executing script: " + filename);
+                            processScriptFile(p, lines, compiler, runner);
+                            continue;
+                        }
+                    } catch (IOException e) {
+                        System.err.println("Failed to read file '" + filename + "': " + e.getMessage());
+                        // fallback to compiling as source below
+                    }
+                }
 
-                // Step 2: Handle compilation result
+                // Default: treat as Sigma source file. Prefer the resolved path 'p' if it exists.
+                Path compilePath = Files.exists(p) ? p : Paths.get(filename);
+                System.out.println("Compiling: " + compilePath);
+                CompilationResult result = compiler.compileFile(compilePath.toString());
+
+                // Handle compilation result
                 if (!result.isSuccessful()) {
                     System.err.println("Compilation of " + filename + " failed:");
                     System.err.println(result.getAllMessagesAsString());
                     continue; // Try next file
                 }
 
-                // Step 3: Execute (separate responsibility)
+                // Execute
                 System.out.println("Executing: " + filename);
                 try {
                     runner.run(result);
@@ -67,6 +112,148 @@ public class CompilerApp {
                 }
             }
         }
+    }
+
+    /**
+     * Heuristically determine if a file is a command script (contains directives) rather than plain Sigma source.
+     */
+    private static boolean looksLikeCommandScript(List<String> lines) {
+        for (String raw : lines) {
+            String line = raw.strip();
+            if (line.isEmpty() || line.startsWith("#")) continue;
+            // Recognize simple directives: runfile, runcode, compile (script directives)
+            if (line.startsWith("runfile ") || line.startsWith("runcode") || line.startsWith("compile ") || line.startsWith("print ")) {
+                return true;
+            }
+            // If first non-empty line looks like Sigma code (type or identifier with semicolon), treat as source
+            break;
+        }
+        return false;
+    }
+
+    /**
+     * Process a command script file. Supported directives (one per line):
+     * - runfile <path>       : compile and run the Sigma source file at <path>
+     * - compile <path>       : compile only (no run)
+     * - runcode <code>       : compile and run the inline code on the same line
+     * - runcode <<           : start a heredoc; continue reading lines until a line with '>>' and treat the content as code
+     * - print <text>         : print the rest of the line to stdout
+     * Lines starting with '#' are treated as comments.
+     */
+    private static void processScriptFile(Path scriptPath, List<String> lines, SigmaCompiler compiler, SigmaRunner runner) {
+        for (int i = 0; i < lines.size(); i++) {
+            String raw = lines.get(i);
+            String line = raw.strip();
+            if (line.isEmpty() || line.startsWith("#")) continue;
+
+            if (line.startsWith("print ")) {
+                System.out.println(line.substring("print ".length()));
+                continue;
+            }
+
+            if (line.startsWith("runfile ")) {
+                String target = line.substring("runfile ".length()).strip();
+                Path targetPath = scriptPath.getParent() != null ? scriptPath.getParent().resolve(target) : Paths.get(target);
+                System.out.println("Script: runfile " + targetPath);
+                CompilationResult result = compiler.compileFile(targetPath.toString());
+                if (!result.isSuccessful()) {
+                    System.err.println("Compilation of " + target + " failed:");
+                    System.err.println(result.getAllMessagesAsString());
+                    continue;
+                }
+                try {
+                    runner.run(result);
+                } catch (Exception e) {
+                    System.err.println("Execution failed for " + target + ": " + e.getMessage());
+                }
+                continue;
+            }
+
+                // Implicit code block: consecutive Sigma statements (lines ending with ';', containing '=', or using println)
+                if (looksLikeSigmaStatement(line)) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(line).append('\n');
+                    // gather following Sigma-like lines
+                    int j = i + 1;
+                    for (; j < lines.size(); j++) {
+                        String next = lines.get(j).strip();
+                        if (next.isEmpty() || next.startsWith("#")) break;
+                        // stop if next is a directive
+                        if (next.startsWith("print ") || next.startsWith("runfile ") || next.startsWith("compile ") || next.startsWith("runcode")) break;
+                        // otherwise treat as Sigma code line
+                        sb.append(next).append('\n');
+                    }
+                    i = j - 1; // advance outer loop
+                    System.out.println("Script: implicit runcode block - executing. Block content:\n" + sb.toString());
+                    runInlineCode(compiler, runner, sb.toString());
+                    continue;
+                }
+
+            if (line.startsWith("compile ")) {
+                String target = line.substring("compile ".length()).strip();
+                Path targetPath = scriptPath.getParent() != null ? scriptPath.getParent().resolve(target) : Paths.get(target);
+                System.out.println("Script: compile " + targetPath);
+                CompilationResult result = compiler.compileFile(targetPath.toString());
+                if (!result.isSuccessful()) {
+                    System.err.println("Compilation of " + target + " failed:");
+                    System.err.println(result.getAllMessagesAsString());
+                } else {
+                    System.out.println("Compilation successful: " + target);
+                }
+                continue;
+            }
+
+            if (line.startsWith("runcode ")) {
+                String code = line.substring("runcode ".length());
+                System.out.println("Script: runcode (inline)");
+                runInlineCode(compiler, runner, code);
+                continue;
+            }
+
+            if (line.equals("runcode <<")) {
+                // Heredoc: gather lines until '>>'
+                StringBuilder sb = new StringBuilder();
+                i++; // move to next line
+                for (; i < lines.size(); i++) {
+                    String l = lines.get(i);
+                    if (l.strip().equals(">>")) break;
+                    sb.append(l).append('\n');
+                }
+                String code = sb.toString();
+                System.out.println("Script: runcode (heredoc) - executing block");
+                runInlineCode(compiler, runner, code);
+                continue;
+            }
+
+            // Unknown directive - warn
+            System.err.println("Unknown script directive: '" + line + "' in " + scriptPath);
+        }
+    }
+
+    private static void runInlineCode(SigmaCompiler compiler, SigmaRunner runner, String code) {
+        CompilationResult res = compiler.compile(code);
+        if (!res.isSuccessful()) {
+            System.err.println("Compilation failed for inline code:");
+            System.err.println(res.getAllMessagesAsString());
+            return;
+        }
+        try {
+            runner.run(res);
+        } catch (Exception e) {
+            System.err.println("Execution failed for inline code: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private static boolean looksLikeSigmaStatement(String line) {
+        // Simple heuristics: statement ends with ';' or contains '=' or starts with 'int ' or 'println'
+        // exclude script directives
+        if (line.startsWith("runcode") || line.startsWith("runfile") || line.startsWith("compile") || line.startsWith("print")) return false;
+        if (line.endsWith(";")) return true;
+        if (line.contains("=")) return true;
+        if (line.startsWith("int ") || line.startsWith("double ") || line.startsWith("String ") || line.startsWith("boolean ")) return true;
+        if (line.startsWith("println(")) return true;
+        return false;
     }
 
 }
