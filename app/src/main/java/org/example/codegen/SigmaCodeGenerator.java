@@ -1,6 +1,7 @@
 package org.example.codegen;
 
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.example.parser.SigmaBaseVisitor;
 import org.example.parser.SigmaParser;
 import org.example.semantic.SymbolTable;
@@ -427,39 +428,67 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
             visit(ctx.expression(1));
             mainMethod.visitInsn(ISUB);
         } else if ("^".equals(operator)) {
-            // Constant-fold when both operands are integer literals (robust check)
-            // Helper to check left/right exist as expression nodes or primary
-            boolean leftIsExprNode = ctx.expression().size() > 0 && ctx.expression(0) != null;
-            boolean rightIsExprNode = ctx.expression().size() > 1 && ctx.expression(1) != null;
-            if (isIntegerLiteral(leftIsExprNode ? ctx.expression(0) : null) && isIntegerLiteral(rightIsExprNode ? ctx.expression(1) : ctx.expression(0))) {
-                // extract texts robustly
-                String leftText = leftIsExprNode ? ctx.expression(0).getText() : (ctx.primary()!=null ? ctx.primary().getText() : "0");
-                String rightText = rightIsExprNode ? ctx.expression(1).getText() : (ctx.expression().size() > 0 ? ctx.expression(0).getText() : "0");
-                int base = Integer.parseInt(leftText);
-                int exp = Integer.parseInt(rightText);
-                long res = 1;
-                for (int i = 0; i < exp; i++) res *= base;
-                mainMethod.push((int) res);
+            // Robust handling for exponentiation '^'
+            // Extract left/right nodes (prefer expression children but fall back to raw children)
+            ParseTree leftNode = null;
+            ParseTree rightNode = null;
+            if (ctx.expression() != null && ctx.expression().size() >= 2) {
+                leftNode = ctx.expression(0);
+                rightNode = ctx.expression(1);
+            } else if (ctx.getChildCount() >= 3) {
+                leftNode = ctx.getChild(0);
+                rightNode = ctx.getChild(2);
+            }
+
+            // Infer types for nodes
+            org.example.semantic.SigmaType lt = getTypeForNode(leftNode);
+            org.example.semantic.SigmaType rt = getTypeForNode(rightNode);
+
+            boolean leftIsInt = (lt == org.example.semantic.SigmaType.INT) || isIntegerLiteralNode(leftNode) || (leftNode instanceof SigmaParser.ExpressionContext && expressionIsInt((SigmaParser.ExpressionContext) leftNode));
+            boolean leftIsDouble = (lt == org.example.semantic.SigmaType.DOUBLE) || (leftNode instanceof SigmaParser.ExpressionContext && expressionIsDouble((SigmaParser.ExpressionContext) leftNode));
+            boolean rightIsInt = (rt == org.example.semantic.SigmaType.INT) || isIntegerLiteralNode(rightNode) || (rightNode instanceof SigmaParser.ExpressionContext && expressionIsInt((SigmaParser.ExpressionContext) rightNode));
+            boolean rightIsDouble = (rt == org.example.semantic.SigmaType.DOUBLE) || (rightNode instanceof SigmaParser.ExpressionContext && expressionIsDouble((SigmaParser.ExpressionContext) rightNode));
+
+            int leftTemp = mainMethod.newLocal(Type.DOUBLE_TYPE);
+            int rightTemp = mainMethod.newLocal(Type.DOUBLE_TYPE);
+
+            // Evaluate left
+            if (leftIsInt) {
+                visit(leftNode);
+                mainMethod.visitInsn(I2D);
+            } else if (leftIsDouble) {
+                visit(leftNode);
             } else {
-                // Evaluate operands as numbers and call Math.pow(DD)D.
-                // Left operand may be in ctx.expression(0) or as ctx.primary()
-                org.example.semantic.SigmaType lt = leftIsExprNode ? getExpressionSigmaType(ctx.expression(0)) : getExpressionSigmaTypeFromPrimary(ctx);
-                org.example.semantic.SigmaType rt = rightIsExprNode ? getExpressionSigmaType(ctx.expression(1)) : getExpressionSigmaType(ctx.expression(0));
-                // visit left
-                if (leftIsExprNode) {
-                    if (lt == org.example.semantic.SigmaType.INT) { visit(ctx.expression(0)); mainMethod.visitInsn(I2D); } else visit(ctx.expression(0));
-                } else {
-                    // left as primary
-                    if (lt == org.example.semantic.SigmaType.INT) { visit(ctx.primary()); mainMethod.visitInsn(I2D); } else visit(ctx.primary());
-                }
-                // visit right
-                if (rightIsExprNode) {
-                    if (rt == org.example.semantic.SigmaType.INT) { visit(ctx.expression(1)); mainMethod.visitInsn(I2D); } else visit(ctx.expression(1));
-                } else {
-                    if (rt == org.example.semantic.SigmaType.INT) { visit(ctx.expression(0)); mainMethod.visitInsn(I2D); } else visit(ctx.expression(0));
-                }
-                mainMethod.invokeStatic(Type.getType(Math.class), Method.getMethod("double pow (double,double)"));
-                if (lt == org.example.semantic.SigmaType.INT && rt == org.example.semantic.SigmaType.INT) mainMethod.visitInsn(D2I);
+                // best-effort fallback: coerce to double
+                if (leftNode != null) System.out.println("[CODEGEN] warning: treating left operand of ^ as int (fallback): " + leftNode.getText());
+                visit(leftNode);
+                mainMethod.visitInsn(I2D);
+                leftIsInt = true;
+            }
+            mainMethod.storeLocal(leftTemp, Type.DOUBLE_TYPE);
+
+            // Evaluate right
+            if (rightIsInt) {
+                visit(rightNode);
+                mainMethod.visitInsn(I2D);
+            } else if (rightIsDouble) {
+                visit(rightNode);
+            } else {
+                if (rightNode != null) System.out.println("[CODEGEN] warning: treating right operand of ^ as int (fallback): " + rightNode.getText());
+                visit(rightNode);
+                mainMethod.visitInsn(I2D);
+                rightIsInt = true;
+            }
+            mainMethod.storeLocal(rightTemp, Type.DOUBLE_TYPE);
+
+            // Call Math.pow
+            mainMethod.loadLocal(leftTemp, Type.DOUBLE_TYPE);
+            mainMethod.loadLocal(rightTemp, Type.DOUBLE_TYPE);
+            mainMethod.invokeStatic(Type.getType(Math.class), Method.getMethod("double pow (double,double)"));
+
+            // If both operands were ints, cast back to int
+            if (leftIsInt && rightIsInt) {
+                mainMethod.visitInsn(D2I);
             }
         } else if ("*".equals(operator)) {
             // handle double vs int multiplication
@@ -668,6 +697,65 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
         // Parenthesized expression
         if (expr.getChildCount() == 3 && expr.getChild(0).getText().equals("(")) {
             return expressionIsBoolean(expr.expression(0));
+        }
+        return false;
+    }
+
+    /**
+     * Infer type for an arbitrary parse node (ExpressionContext, PrimaryContext, LiteralContext, or a raw terminal).
+     */
+    private org.example.semantic.SigmaType getTypeForNode(ParseTree node) {
+        if (node == null) return org.example.semantic.SigmaType.UNKNOWN;
+        if (node instanceof SigmaParser.ExpressionContext) {
+            return getExpressionSigmaType((SigmaParser.ExpressionContext) node);
+        }
+        if (node instanceof SigmaParser.PrimaryContext) {
+            SigmaParser.PrimaryContext p = (SigmaParser.PrimaryContext) node;
+            if (p.literal() != null) {
+                if (p.literal().INTEGER() != null) return org.example.semantic.SigmaType.INT;
+                if (p.literal().DOUBLE() != null) return org.example.semantic.SigmaType.DOUBLE;
+                if (p.literal().BOOLEAN() != null) return org.example.semantic.SigmaType.BOOLEAN;
+                if (p.literal().STRING() != null) return org.example.semantic.SigmaType.STRING;
+            }
+            if (p.IDENTIFIER() != null) {
+                String name = p.IDENTIFIER().getText();
+                org.example.semantic.SigmaType vt = variableTypes.get(name);
+                if (vt != null) return vt;
+                Symbol s = symbolTable.lookup(name);
+                if (s != null) return s.getType();
+            }
+        }
+        if (node instanceof SigmaParser.LiteralContext) {
+            SigmaParser.LiteralContext l = (SigmaParser.LiteralContext) node;
+            if (l.INTEGER() != null) return org.example.semantic.SigmaType.INT;
+            if (l.DOUBLE() != null) return org.example.semantic.SigmaType.DOUBLE;
+            if (l.BOOLEAN() != null) return org.example.semantic.SigmaType.BOOLEAN;
+            if (l.STRING() != null) return org.example.semantic.SigmaType.STRING;
+        }
+        if (node instanceof TerminalNode) {
+            String txt = node.getText();
+            if (txt.matches("[0-9]+")) return org.example.semantic.SigmaType.INT;
+            if (txt.matches("[0-9]*\\.[0-9]+")) return org.example.semantic.SigmaType.DOUBLE;
+            if ("true".equals(txt) || "false".equals(txt)) return org.example.semantic.SigmaType.BOOLEAN;
+            if (txt.startsWith("\"") && txt.endsWith("\"")) return org.example.semantic.SigmaType.STRING;
+        }
+        return org.example.semantic.SigmaType.UNKNOWN;
+    }
+
+    private boolean isIntegerLiteralNode(ParseTree node) {
+        if (node == null) return false;
+        if (node instanceof SigmaParser.ExpressionContext) return isIntegerLiteral((SigmaParser.ExpressionContext) node);
+        if (node instanceof SigmaParser.PrimaryContext) {
+            SigmaParser.PrimaryContext p = (SigmaParser.PrimaryContext) node;
+            if (p.literal() != null && p.literal().INTEGER() != null) return true;
+        }
+        if (node instanceof SigmaParser.LiteralContext) {
+            SigmaParser.LiteralContext l = (SigmaParser.LiteralContext) node;
+            return l.INTEGER() != null;
+        }
+        if (node instanceof TerminalNode) {
+            String txt = node.getText();
+            return txt.matches("[0-9]+");
         }
         return false;
     }

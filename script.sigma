@@ -35,10 +35,11 @@ while (cnt < 3) {
 	cnt = cnt + 1;
 }
 
-runcode println("2 to the power of 3 is " + (2 ^ 3));
+runcode println("2 ^ 3 = " + (2 ^ 3));
 runcode println("--- End of minimal demo ---");
+
 
 // Notes:
 // - string concatenation with doubles, named constants and
 //   user-defined functions are examples of features planned or partially
-//   implemented. They have been omitted here to keep the demo stable.
+//   implemented.
