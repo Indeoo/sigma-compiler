@@ -121,6 +121,7 @@ public class CompilerApp {
         for (String raw : lines) {
             String line = raw.strip();
             if (line.isEmpty() || line.startsWith("#")) continue;
+            if (line.startsWith("//")) continue;
             // Recognize simple directives: runfile, runcode, compile (script directives)
             if (line.startsWith("runfile ") || line.startsWith("runcode") || line.startsWith("compile ") || line.startsWith("print ")) {
                 return true;
@@ -141,17 +142,75 @@ public class CompilerApp {
      * Lines starting with '#' are treated as comments.
      */
     private static void processScriptFile(Path scriptPath, List<String> lines, SigmaCompiler compiler, SigmaRunner runner) {
+        // First pass: collect prelude declarations (const and top-level function declarations) so they are visible to later inline blocks
+        StringBuilder prelude = new StringBuilder();
+        boolean[] isPreludeLine = new boolean[lines.size()];
         for (int i = 0; i < lines.size(); i++) {
             String raw = lines.get(i);
             String line = raw.strip();
-            if (line.isEmpty() || line.startsWith("#")) continue;
+            if (line.startsWith("//") || line.startsWith("#") || line.isEmpty()) continue;
+
+            // skip runcode blocks/heredoc when collecting top-level declarations
+            if (line.startsWith("runcode <<")) {
+                // skip until '>>'
+                i++;
+                for (; i < lines.size(); i++) {
+                    if (lines.get(i).strip().equals(">>")) break;
+                }
+                continue;
+            }
+            if (line.startsWith("runcode")) {
+                // skip following block lines until next directive (simple heuristic)
+                i++;
+                for (; i < lines.size(); i++) {
+                    String s = lines.get(i).strip();
+                    if (s.startsWith("print ") || s.startsWith("runfile ") || s.startsWith("compile ") || s.startsWith("runcode")) {
+                        i--;
+                        break;
+                    }
+                }
+                continue;
+            }
+
+            // collect const declarations
+            if (line.startsWith("const ")) {
+                prelude.append(line).append('\n');
+                isPreludeLine[i] = true;
+                continue;
+            }
+
+            // collect top-level function declarations only (heuristic: function starts at column with type/name and ends with '{')
+            if (line.contains("(") && line.contains(")") && line.endsWith("{")) {
+                int depth = 0;
+                int j = i;
+                for (; j < lines.size(); j++) {
+                    String l = lines.get(j);
+                    prelude.append(l).append('\n');
+                    isPreludeLine[j] = true;
+                    for (char c : l.toCharArray()) {
+                        if (c == '{') depth++;
+                        else if (c == '}') depth--;
+                    }
+                    if (depth <= 0) break;
+                }
+                i = j; // continue outer loop after function body
+            }
+        }
+
+        // Second pass: execute script lines, skipping prelude lines; accumulate code so declarations are preserved once
+        StringBuilder accumulated = new StringBuilder(prelude.toString());
+        for (int i = 0; i < lines.size(); i++) {
+            if (isPreludeLine[i]) continue;
+            String raw = lines.get(i);
+            String line = raw.strip();
+            if (line.isEmpty() || line.startsWith("#") || line.startsWith("//")) continue;
 
             if (line.startsWith("print ")) {
                 System.out.println(line.substring("print ".length()));
                 continue;
             }
 
-            if (line.startsWith("runfile ")) {
+                if (line.startsWith("runfile ")) {
                 String target = line.substring("runfile ".length()).strip();
                 Path targetPath = scriptPath.getParent() != null ? scriptPath.getParent().resolve(target) : Paths.get(target);
                 System.out.println("Script: runfile " + targetPath);
@@ -178,6 +237,7 @@ public class CompilerApp {
                     for (; j < lines.size(); j++) {
                         String next = lines.get(j).strip();
                         if (next.isEmpty() || next.startsWith("#")) break;
+                        if (next.startsWith("//")) continue;
                         // stop if next is a directive
                         if (next.startsWith("print ") || next.startsWith("runfile ") || next.startsWith("compile ") || next.startsWith("runcode")) break;
                         // otherwise treat as Sigma code line
@@ -185,11 +245,13 @@ public class CompilerApp {
                     }
                     i = j - 1; // advance outer loop
                     System.out.println("Script: implicit runcode block - executing. Block content:\n" + sb.toString());
-                    runInlineCode(compiler, runner, sb.toString());
+                    // Append block to accumulated program and run the full accumulated program
+                    accumulated.append('\n').append(sb.toString());
+                    runInlineCode(compiler, runner, accumulated.toString(), "");
                     continue;
                 }
 
-            if (line.startsWith("compile ")) {
+                if (line.startsWith("compile ")) {
                 String target = line.substring("compile ".length()).strip();
                 Path targetPath = scriptPath.getParent() != null ? scriptPath.getParent().resolve(target) : Paths.get(target);
                 System.out.println("Script: compile " + targetPath);
@@ -206,7 +268,28 @@ public class CompilerApp {
             if (line.startsWith("runcode ")) {
                 String code = line.substring("runcode ".length());
                 System.out.println("Script: runcode (inline)");
-                runInlineCode(compiler, runner, code);
+                accumulated.append('\n').append(code);
+                runInlineCode(compiler, runner, accumulated.toString(), "");
+                continue;
+            }
+
+            if (line.equals("runcode")) {
+                // Gather following Sigma-like lines until next directive (allow blank lines inside block)
+                StringBuilder sb = new StringBuilder();
+                int j = i + 1;
+                for (; j < lines.size(); j++) {
+                    String next = lines.get(j);
+                    String stripped = next.strip();
+                    // stop collecting when we see a directive at line start
+                    if (stripped.startsWith("print ") || stripped.startsWith("runfile ") || stripped.startsWith("compile ") || stripped.startsWith("runcode")) break;
+                    // skip comment lines but keep blank lines in code
+                    if (stripped.startsWith("#") || stripped.startsWith("//")) continue;
+                    sb.append(next).append('\n');
+                }
+                i = j - 1;
+                System.out.println("Script: runcode (block) - executing\n" + sb.toString());
+                accumulated.append('\n').append(sb.toString());
+                runInlineCode(compiler, runner, accumulated.toString(), "");
                 continue;
             }
 
@@ -221,7 +304,8 @@ public class CompilerApp {
                 }
                 String code = sb.toString();
                 System.out.println("Script: runcode (heredoc) - executing block");
-                runInlineCode(compiler, runner, code);
+                accumulated.append('\n').append(code);
+                runInlineCode(compiler, runner, accumulated.toString(), "");
                 continue;
             }
 
@@ -230,8 +314,9 @@ public class CompilerApp {
         }
     }
 
-    private static void runInlineCode(SigmaCompiler compiler, SigmaRunner runner, String code) {
-        CompilationResult res = compiler.compile(code);
+    private static void runInlineCode(SigmaCompiler compiler, SigmaRunner runner, String prelude, String code) {
+        String full = prelude == null || prelude.isEmpty() ? code : (prelude + "\n" + code);
+        CompilationResult res = compiler.compile(full);
         if (!res.isSuccessful()) {
             System.err.println("Compilation failed for inline code:");
             System.err.println(res.getAllMessagesAsString());

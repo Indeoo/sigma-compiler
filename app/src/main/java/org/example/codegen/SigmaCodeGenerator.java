@@ -42,6 +42,12 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
         this.nextLocalVarSlot = 1; // Slot 0 reserved for 'this' in non-static methods, but we're using static main
     }
 
+    @Override
+    public Void visit(ParseTree tree) {
+        if (tree == null) return null;
+        return super.visit(tree);
+    }
+
     /**
      * Generate bytecode for the given parse tree
      * @param parseTree the AST to compile
@@ -49,6 +55,9 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
      */
     public byte[] generateBytecode(ParseTree parseTree) {
         try {
+            if (parseTree == null) {
+                throw new IllegalArgumentException("generateBytecode called with null parseTree");
+            }
             // Initialize class writer
             classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
 
@@ -74,7 +83,13 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
             return classWriter.toByteArray();
 
         } catch (Exception e) {
-            errors.add("Code generation error: " + e.getMessage());
+            // Capture full exception for debugging
+            String msg = "Code generation error: " + e.toString();
+            errors.add(msg);
+            // also append stack trace lines
+            for (StackTraceElement el : e.getStackTrace()) {
+                errors.add("  at " + el.toString());
+            }
             return null;
         }
     }
@@ -129,38 +144,68 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
     public Void visitVariableDeclaration(SigmaParser.VariableDeclarationContext ctx) {
         String varName = ctx.IDENTIFIER().getText();
 
-        // Allocate a local variable slot for this variable
-        int slot = nextLocalVarSlot++;
+        // Look up the declared symbol and allocate a local variable slot for it consistently.
+        Symbol symbol = symbolTable.lookup(varName);
+        int slot;
+        if (symbol != null) {
+            switch (symbol.getType()) {
+                case INT:
+                    slot = mainMethod.newLocal(Type.INT_TYPE);
+                    break;
+                case DOUBLE:
+                    slot = mainMethod.newLocal(Type.DOUBLE_TYPE);
+                    break;
+                case BOOLEAN:
+                    // Booleans are represented as ints on the JVM
+                    slot = mainMethod.newLocal(Type.BOOLEAN_TYPE);
+                    break;
+                case STRING:
+                default:
+                    slot = mainMethod.newLocal(Type.getType(String.class));
+                    break;
+            }
+        } else {
+            slot = mainMethod.newLocal(Type.getType(String.class));
+        }
         variableSlots.put(varName, slot);
 
-        // Record declared type (if available)
-        Symbol symbolForType = symbolTable.lookup(varName);
-        if (symbolForType != null) {
-            variableTypes.put(varName, symbolForType.getType());
+        // Record declared type (if available) so expressionIsInt and loads can use it
+        if (symbol != null) {
+            variableTypes.put(varName, symbol.getType());
         }
+        // Debug: print allocation
+        System.out.println("[CODEGEN] allocated slot=" + slot + " for var='" + varName + "' type=" + (symbol != null ? symbol.getType() : "<unknown>"));
 
         // If there's an initialization expression, evaluate it and store the result
         if (ctx.expression() != null) {
             visit(ctx.expression());
 
-            // Get the variable type from symbol table to determine storage instruction
-            Symbol symbol = symbolTable.lookup(varName);
+            // Use the same symbol we looked up earlier to decide storage instruction
             if (symbol != null) {
                 switch (symbol.getType()) {
                     case INT:
                         // Expect int on stack
                         mainMethod.storeLocal(slot, Type.INT_TYPE);
+                        System.out.println("[CODEGEN] storeLocal ISTORE slot=" + slot + " for var='" + varName + "'");
+                        break;
+                    case DOUBLE:
+                        mainMethod.storeLocal(slot, Type.DOUBLE_TYPE);
+                        System.out.println("[CODEGEN] storeLocal DSTORE slot=" + slot + " for var='" + varName + "'");
+                        break;
+                    case BOOLEAN:
+                        mainMethod.storeLocal(slot, Type.BOOLEAN_TYPE);
+                        System.out.println("[CODEGEN] storeLocal ISTORE(slot as boolean) slot=" + slot + " for var='" + varName + "'");
                         break;
                     case STRING:
                     default:
-                        // Store as string
+                        // Store as string/reference
                         mainMethod.storeLocal(slot, Type.getType(String.class));
+                        System.out.println("[CODEGEN] storeLocal ASTORE slot=" + slot + " for var='" + varName + "'");
                         break;
                 }
             }
         } else {
             // Initialize with default value
-            Symbol symbol = symbolTable.lookup(varName);
             if (symbol != null && symbol.getType() == org.example.semantic.SigmaType.INT) {
                 mainMethod.push(0);
                 mainMethod.storeLocal(slot, Type.INT_TYPE);
@@ -186,10 +231,20 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
                 switch (symbol.getType()) {
                     case INT:
                         mainMethod.storeLocal(slot, Type.INT_TYPE);
+                        System.out.println("[CODEGEN] storeLocal ISTORE slot=" + slot + " for assign var='" + varName + "'");
+                        break;
+                    case DOUBLE:
+                        mainMethod.storeLocal(slot, Type.DOUBLE_TYPE);
+                        System.out.println("[CODEGEN] storeLocal DSTORE slot=" + slot + " for assign var='" + varName + "'");
+                        break;
+                    case BOOLEAN:
+                        mainMethod.storeLocal(slot, Type.BOOLEAN_TYPE);
+                        System.out.println("[CODEGEN] storeLocal ISTORE(slot as boolean) slot=" + slot + " for assign var='" + varName + "'");
                         break;
                     case STRING:
                     default:
                         mainMethod.storeLocal(slot, Type.getType(String.class));
+                        System.out.println("[CODEGEN] storeLocal ASTORE slot=" + slot + " for assign var='" + varName + "'");
                         break;
                 }
             }
@@ -208,18 +263,23 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
 
     @Override
     public Void visitExpression(SigmaParser.ExpressionContext ctx) {
-        if (ctx.primary() != null) {
-            // Simple primary expression
-            visit(ctx.primary());
-        } else if (ctx.getChildCount() >= 3 && ctx.getChild(1).getText().equals("(")) {
-            // Method call: expression '(' argumentList? ')'
+        // Be defensive: check child counts and nulls before visiting
+        int c = ctx.getChildCount();
+        // Handle method calls first: need at least 3 children and a '(' at position 1
+        if (c >= 3 && ctx.getChild(1) != null && "(".equals(ctx.getChild(1).getText())) {
             handleMethodCall(ctx);
-        } else if (ctx.getChildCount() == 3 && isOperator(ctx.getChild(1).getText())) {
-            // Binary operation
+        }
+        // Binary operations including exponentiation (ensure we catch operator forms before primary shortcut)
+        else if (c == 3 && ctx.getChild(1) != null && isOperator(ctx.getChild(1).getText())) {
             handleBinaryOperation(ctx);
-        } else if (ctx.getChildCount() == 3 && ctx.getChild(0).getText().equals("(")) {
-            // Parentheses: '(' expression ')'
-            visit(ctx.expression(0));
+        }
+        // Parentheses: '(' expression ')'
+        else if (c == 3 && ctx.getChild(0) != null && "(".equals(ctx.getChild(0).getText())) {
+            if (ctx.expression().size() > 0 && ctx.expression(0) != null) visit(ctx.expression(0));
+        }
+        // Simple primary expression (identifiers, literals)
+        else if (ctx.primary() != null) {
+            visit(ctx.primary());
         }
         return null;
     }
@@ -235,28 +295,61 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
         }
 
         if ("println".equals(methodName)) {
-            // Generate System.out.println call
-            mainMethod.getStatic(Type.getType(System.class), "out", Type.getType("Ljava/io/PrintStream;"));
-
-            // Visit the argument if present
+            // Evaluate the argument into a typed temporary local to preserve evaluation order
             if (ctx.argumentList() != null && ctx.argumentList().expression().size() > 0) {
                 SigmaParser.ExpressionContext argExpr = ctx.argumentList().expression(0);
-                if (expressionIsInt(argExpr)) {
-                    visit(argExpr);
-                    mainMethod.invokeVirtual(Type.getType("Ljava/io/PrintStream;"),
-                            Method.getMethod("void println (int)"));
-                    return;
+                org.example.semantic.SigmaType exprType = getExpressionSigmaType(argExpr);
+
+                // allocate a typed temp for the evaluated argument
+                int tempSlot;
+                Type tempType;
+                switch (exprType) {
+                    case INT:
+                        tempType = Type.INT_TYPE;
+                        tempSlot = mainMethod.newLocal(tempType);
+                        visit(argExpr);
+                        mainMethod.storeLocal(tempSlot, tempType);
+                        // push System.out then load int arg and call println(int)
+                        mainMethod.getStatic(Type.getType(System.class), "out", Type.getType("Ljava/io/PrintStream;"));
+                        mainMethod.loadLocal(tempSlot, tempType);
+                        mainMethod.invokeVirtual(Type.getType("Ljava/io/PrintStream;"), Method.getMethod("void println (int)"));
+                        return;
+                    case DOUBLE:
+                        tempType = Type.DOUBLE_TYPE;
+                        tempSlot = mainMethod.newLocal(tempType);
+                        visit(argExpr);
+                        // ensure double on stack (if int -> I2D done by expression code)
+                        mainMethod.storeLocal(tempSlot, tempType);
+                        mainMethod.getStatic(Type.getType(System.class), "out", Type.getType("Ljava/io/PrintStream;"));
+                        mainMethod.loadLocal(tempSlot, tempType);
+                        mainMethod.invokeVirtual(Type.getType("Ljava/io/PrintStream;"), Method.getMethod("void println (double)"));
+                        return;
+                    case BOOLEAN:
+                        tempType = Type.BOOLEAN_TYPE;
+                        tempSlot = mainMethod.newLocal(tempType);
+                        visit(argExpr);
+                        mainMethod.storeLocal(tempSlot, tempType);
+                        mainMethod.getStatic(Type.getType(System.class), "out", Type.getType("Ljava/io/PrintStream;"));
+                        mainMethod.loadLocal(tempSlot, tempType);
+                        mainMethod.invokeVirtual(Type.getType("Ljava/io/PrintStream;"), Method.getMethod("void println (boolean)"));
+                        return;
+                    case STRING:
+                    default:
+                        tempType = Type.getType(String.class);
+                        tempSlot = mainMethod.newLocal(tempType);
+                        visit(argExpr);
+                        mainMethod.storeLocal(tempSlot, tempType);
+                        mainMethod.getStatic(Type.getType(System.class), "out", Type.getType("Ljava/io/PrintStream;"));
+                        mainMethod.loadLocal(tempSlot, tempType);
+                        mainMethod.invokeVirtual(Type.getType("Ljava/io/PrintStream;"), Method.getMethod("void println (String)"));
+                        return;
                 }
-
-                // Default: evaluate and print as String
-                visit(argExpr);
             } else {
-                mainMethod.push(""); // Default empty string
+                // No argument: println a blank line
+                mainMethod.getStatic(Type.getType(System.class), "out", Type.getType("Ljava/io/PrintStream;"));
+                mainMethod.invokeVirtual(Type.getType("Ljava/io/PrintStream;"), Method.getMethod("void println ()"));
+                return;
             }
-
-            // Call println(String)
-            mainMethod.invokeVirtual(Type.getType("Ljava/io/PrintStream;"),
-                    Method.getMethod("void println (String)"));
         } else {
             // For other method calls, just visit the left expression for now
             visit(leftExpr);
@@ -275,29 +368,56 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
                 visit(ctx.expression(1));
                 mainMethod.visitInsn(IADD);
             } else {
-                // String concatenation via StringBuilder
+                // Evaluate both operands to String temporaries to avoid stack type issues
+                int leftTemp = mainMethod.newLocal(Type.getType(String.class));
+                int rightTemp = mainMethod.newLocal(Type.getType(String.class));
+
+                // Evaluate left -> String (pick correct String.valueOf overload based on operand type)
+                if (leftInt) {
+                    visit(ctx.expression(0));
+                    mainMethod.invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf (int)"));
+                } else if (expressionIsBoolean(ctx.expression(0))) {
+                    visit(ctx.expression(0));
+                    mainMethod.invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf (boolean)"));
+                } else if (expressionIsDouble(ctx.expression(0))) {
+                    visit(ctx.expression(0));
+                    mainMethod.invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf (double)"));
+                } else {
+                    visit(ctx.expression(0));
+                    // ensure object converted to String
+                    mainMethod.invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf (Object)"));
+                }
+                mainMethod.storeLocal(leftTemp, Type.getType(String.class));
+
+                // Evaluate right -> String
+                if (rightInt) {
+                    visit(ctx.expression(1));
+                    mainMethod.invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf (int)"));
+                } else if (expressionIsBoolean(ctx.expression(1))) {
+                    visit(ctx.expression(1));
+                    mainMethod.invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf (boolean)"));
+                } else if (expressionIsDouble(ctx.expression(1))) {
+                    visit(ctx.expression(1));
+                    mainMethod.invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf (double)"));
+                } else {
+                    visit(ctx.expression(1));
+                    mainMethod.invokeStatic(Type.getType(String.class), Method.getMethod("String valueOf (Object)"));
+                }
+                mainMethod.storeLocal(rightTemp, Type.getType(String.class));
+
+                // Build final String via StringBuilder
                 Type sbType = Type.getType(StringBuilder.class);
                 mainMethod.newInstance(sbType);
                 mainMethod.dup();
                 mainMethod.invokeConstructor(sbType, Method.getMethod("void <init> ()"));
 
                 // append left
-                if (leftInt) {
-                    visit(ctx.expression(0));
-                    mainMethod.invokeVirtual(sbType, Method.getMethod("java.lang.StringBuilder append (int)"));
-                } else {
-                    visit(ctx.expression(0));
-                    mainMethod.invokeVirtual(sbType, Method.getMethod("java.lang.StringBuilder append (String)"));
-                }
+                mainMethod.loadLocal(leftTemp, Type.getType(String.class));
+                mainMethod.invokeVirtual(sbType, Method.getMethod("java.lang.StringBuilder append (String)"));
 
                 // append right
-                if (rightInt) {
-                    visit(ctx.expression(1));
-                    mainMethod.invokeVirtual(sbType, Method.getMethod("java.lang.StringBuilder append (int)"));
-                } else {
-                    visit(ctx.expression(1));
-                    mainMethod.invokeVirtual(sbType, Method.getMethod("java.lang.StringBuilder append (String)"));
-                }
+                mainMethod.loadLocal(rightTemp, Type.getType(String.class));
+                mainMethod.invokeVirtual(sbType, Method.getMethod("java.lang.StringBuilder append (String)"));
 
                 // toString
                 mainMethod.invokeVirtual(sbType, Method.getMethod("String toString ()"));
@@ -306,18 +426,156 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
             visit(ctx.expression(0));
             visit(ctx.expression(1));
             mainMethod.visitInsn(ISUB);
+        } else if ("^".equals(operator)) {
+            // Constant-fold when both operands are integer literals (robust check)
+            // Helper to check left/right exist as expression nodes or primary
+            boolean leftIsExprNode = ctx.expression().size() > 0 && ctx.expression(0) != null;
+            boolean rightIsExprNode = ctx.expression().size() > 1 && ctx.expression(1) != null;
+            if (isIntegerLiteral(leftIsExprNode ? ctx.expression(0) : null) && isIntegerLiteral(rightIsExprNode ? ctx.expression(1) : ctx.expression(0))) {
+                // extract texts robustly
+                String leftText = leftIsExprNode ? ctx.expression(0).getText() : (ctx.primary()!=null ? ctx.primary().getText() : "0");
+                String rightText = rightIsExprNode ? ctx.expression(1).getText() : (ctx.expression().size() > 0 ? ctx.expression(0).getText() : "0");
+                int base = Integer.parseInt(leftText);
+                int exp = Integer.parseInt(rightText);
+                long res = 1;
+                for (int i = 0; i < exp; i++) res *= base;
+                mainMethod.push((int) res);
+            } else {
+                // Evaluate operands as numbers and call Math.pow(DD)D.
+                // Left operand may be in ctx.expression(0) or as ctx.primary()
+                org.example.semantic.SigmaType lt = leftIsExprNode ? getExpressionSigmaType(ctx.expression(0)) : getExpressionSigmaTypeFromPrimary(ctx);
+                org.example.semantic.SigmaType rt = rightIsExprNode ? getExpressionSigmaType(ctx.expression(1)) : getExpressionSigmaType(ctx.expression(0));
+                // visit left
+                if (leftIsExprNode) {
+                    if (lt == org.example.semantic.SigmaType.INT) { visit(ctx.expression(0)); mainMethod.visitInsn(I2D); } else visit(ctx.expression(0));
+                } else {
+                    // left as primary
+                    if (lt == org.example.semantic.SigmaType.INT) { visit(ctx.primary()); mainMethod.visitInsn(I2D); } else visit(ctx.primary());
+                }
+                // visit right
+                if (rightIsExprNode) {
+                    if (rt == org.example.semantic.SigmaType.INT) { visit(ctx.expression(1)); mainMethod.visitInsn(I2D); } else visit(ctx.expression(1));
+                } else {
+                    if (rt == org.example.semantic.SigmaType.INT) { visit(ctx.expression(0)); mainMethod.visitInsn(I2D); } else visit(ctx.expression(0));
+                }
+                mainMethod.invokeStatic(Type.getType(Math.class), Method.getMethod("double pow (double,double)"));
+                if (lt == org.example.semantic.SigmaType.INT && rt == org.example.semantic.SigmaType.INT) mainMethod.visitInsn(D2I);
+            }
         } else if ("*".equals(operator)) {
-            visit(ctx.expression(0));
-            visit(ctx.expression(1));
-            mainMethod.visitInsn(IMUL);
+            // handle double vs int multiplication
+            if (expressionIsDouble(ctx.expression(0)) || expressionIsDouble(ctx.expression(1))) {
+                // ensure both on stack as double
+                if (expressionIsInt(ctx.expression(0))) { visit(ctx.expression(0)); mainMethod.visitInsn(I2D); } else visit(ctx.expression(0));
+                if (expressionIsInt(ctx.expression(1))) { visit(ctx.expression(1)); mainMethod.visitInsn(I2D); } else visit(ctx.expression(1));
+                mainMethod.visitInsn(DMUL);
+            } else {
+                visit(ctx.expression(0));
+                visit(ctx.expression(1));
+                mainMethod.visitInsn(IMUL);
+            }
         } else if ("/".equals(operator)) {
-            visit(ctx.expression(0));
-            visit(ctx.expression(1));
-            mainMethod.visitInsn(IDIV);
+            if (expressionIsDouble(ctx.expression(0)) || expressionIsDouble(ctx.expression(1))) {
+                if (expressionIsInt(ctx.expression(0))) { visit(ctx.expression(0)); mainMethod.visitInsn(I2D); } else visit(ctx.expression(0));
+                if (expressionIsInt(ctx.expression(1))) { visit(ctx.expression(1)); mainMethod.visitInsn(I2D); } else visit(ctx.expression(1));
+                mainMethod.visitInsn(DDIV);
+            } else {
+                visit(ctx.expression(0));
+                visit(ctx.expression(1));
+                mainMethod.visitInsn(IDIV);
+            }
         } else if ("%".equals(operator)) {
-            visit(ctx.expression(0));
-            visit(ctx.expression(1));
-            mainMethod.visitInsn(IREM);
+            if (expressionIsDouble(ctx.expression(0)) || expressionIsDouble(ctx.expression(1))) {
+                if (expressionIsInt(ctx.expression(0))) { visit(ctx.expression(0)); mainMethod.visitInsn(I2D); } else visit(ctx.expression(0));
+                if (expressionIsInt(ctx.expression(1))) { visit(ctx.expression(1)); mainMethod.visitInsn(I2D); } else visit(ctx.expression(1));
+                mainMethod.visitInsn(DREM);
+            } else {
+                visit(ctx.expression(0));
+                visit(ctx.expression(1));
+                mainMethod.visitInsn(IREM);
+            }
+        }
+        // Comparison operators
+        else if (">".equals(operator) || "<".equals(operator) || ">=".equals(operator) || "<=".equals(operator)) {
+            boolean eitherDouble = expressionIsDouble(ctx.expression(0)) || expressionIsDouble(ctx.expression(1));
+            if (eitherDouble) {
+                // ensure both are doubles on stack
+                if (expressionIsInt(ctx.expression(0))) { visit(ctx.expression(0)); mainMethod.visitInsn(I2D); } else visit(ctx.expression(0));
+                if (expressionIsInt(ctx.expression(1))) { visit(ctx.expression(1)); mainMethod.visitInsn(I2D); } else visit(ctx.expression(1));
+                // compare doubles -> pushes int (-1/0/1)
+                mainMethod.visitInsn(DCMPL);
+                Label lTrue = new Label();
+                Label lEnd = new Label();
+                if (">".equals(operator)) {
+                    mainMethod.visitJumpInsn(IFGT, lTrue);
+                } else if ("<".equals(operator)) {
+                    mainMethod.visitJumpInsn(IFLT, lTrue);
+                } else if (">=".equals(operator)) {
+                    mainMethod.visitJumpInsn(IFGE, lTrue);
+                } else { // <=
+                    mainMethod.visitJumpInsn(IFLE, lTrue);
+                }
+                // false
+                mainMethod.push(0);
+                mainMethod.visitJumpInsn(GOTO, lEnd);
+                // true
+                mainMethod.visitLabel(lTrue);
+                mainMethod.push(1);
+                mainMethod.visitLabel(lEnd);
+            } else {
+                // integer comparison using IF_ICMP*
+                visit(ctx.expression(0));
+                visit(ctx.expression(1));
+                Label lTrue = new Label();
+                Label lEnd = new Label();
+                if (">".equals(operator)) {
+                    mainMethod.visitJumpInsn(IF_ICMPGT, lTrue);
+                } else if ("<".equals(operator)) {
+                    mainMethod.visitJumpInsn(IF_ICMPLT, lTrue);
+                } else if (">=".equals(operator)) {
+                    mainMethod.visitJumpInsn(IF_ICMPGE, lTrue);
+                } else { // <=
+                    mainMethod.visitJumpInsn(IF_ICMPLE, lTrue);
+                }
+                mainMethod.push(0);
+                mainMethod.visitJumpInsn(GOTO, lEnd);
+                mainMethod.visitLabel(lTrue);
+                mainMethod.push(1);
+                mainMethod.visitLabel(lEnd);
+            }
+        } else if ("==".equals(operator) || "!=".equals(operator)) {
+            boolean eitherDouble = expressionIsDouble(ctx.expression(0)) || expressionIsDouble(ctx.expression(1));
+            if (eitherDouble) {
+                if (expressionIsInt(ctx.expression(0))) { visit(ctx.expression(0)); mainMethod.visitInsn(I2D); } else visit(ctx.expression(0));
+                if (expressionIsInt(ctx.expression(1))) { visit(ctx.expression(1)); mainMethod.visitInsn(I2D); } else visit(ctx.expression(1));
+                mainMethod.visitInsn(DCMPL);
+                Label lTrue = new Label();
+                Label lEnd = new Label();
+                if ("==".equals(operator)) {
+                    mainMethod.visitJumpInsn(IFEQ, lTrue);
+                } else {
+                    mainMethod.visitJumpInsn(IFNE, lTrue);
+                }
+                mainMethod.push(0);
+                mainMethod.visitJumpInsn(GOTO, lEnd);
+                mainMethod.visitLabel(lTrue);
+                mainMethod.push(1);
+                mainMethod.visitLabel(lEnd);
+            } else {
+                visit(ctx.expression(0));
+                visit(ctx.expression(1));
+                Label lTrue = new Label();
+                Label lEnd = new Label();
+                if ("==".equals(operator)) {
+                    mainMethod.visitJumpInsn(IF_ICMPEQ, lTrue);
+                } else {
+                    mainMethod.visitJumpInsn(IF_ICMPNE, lTrue);
+                }
+                mainMethod.push(0);
+                mainMethod.visitJumpInsn(GOTO, lEnd);
+                mainMethod.visitLabel(lTrue);
+                mainMethod.push(1);
+                mainMethod.visitLabel(lEnd);
+            }
         }
     }
 
@@ -337,15 +595,123 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
         // Binary arithmetic
         if (expr.getChildCount() == 3 && isOperator(expr.getChild(1).getText())) {
             String op = expr.getChild(1).getText();
-            if ("+-*/%".contains(op)) {
+            // treat arithmetic operators (including '^') as integer-preserving when both sides are int
+            if ("+-*/%^".contains(op)) {
                 return expressionIsInt(expr.expression(0)) && expressionIsInt(expr.expression(1));
+            }
+        }
+        // Parenthesized expression: (expr)
+        if (expr.getChildCount() == 3 && expr.getChild(0).getText().equals("(")) {
+            return expressionIsInt(expr.expression(0));
+        }
+        // Unary minus
+        if (expr.getChildCount() == 2) {
+            String op = expr.getChild(0).getText();
+            if ("-".equals(op) || "+".equals(op)) {
+                return expressionIsInt(expr.expression(0));
             }
         }
         return false;
     }
 
+    /**
+     * Returns true if the expression is an integer literal (possibly parenthesized or with unary +/-).
+     */
+    private boolean isIntegerLiteral(SigmaParser.ExpressionContext expr) {
+        if (expr == null) return false;
+        if (expr.primary() != null && expr.primary().literal() != null && expr.primary().literal().INTEGER() != null) return true;
+        // Parenthesized
+        if (expr.getChildCount() == 3 && expr.getChild(0).getText().equals("(")) {
+            return isIntegerLiteral(expr.expression(0));
+        }
+        // Unary + or -
+        if (expr.getChildCount() == 2) {
+            String op = expr.getChild(0).getText();
+            if ("-".equals(op) || "+".equals(op)) {
+                return isIntegerLiteral(expr.expression(0));
+            }
+        }
+        return false;
+    }
+
+    private boolean expressionIsDouble(SigmaParser.ExpressionContext expr) {
+        if (expr == null) return false;
+        if (expr.primary() != null && expr.primary().literal() != null && expr.primary().literal().DOUBLE() != null) return true;
+        if (expr.primary() != null && expr.primary().IDENTIFIER() != null) {
+            String name = expr.primary().IDENTIFIER().getText();
+            org.example.semantic.SigmaType vt = variableTypes.get(name);
+            return vt == org.example.semantic.SigmaType.DOUBLE;
+        }
+        if (expr.getChildCount() == 3 && isOperator(expr.getChild(1).getText())) {
+            String op = expr.getChild(1).getText();
+            if ("+-*/%".contains(op) || op.equals("^")) {
+                return expressionIsDouble(expr.expression(0)) || expressionIsDouble(expr.expression(1));
+            }
+        }
+        if (expr.getChildCount() == 3 && expr.getChild(0).getText().equals("(")) {
+            return expressionIsDouble(expr.expression(0));
+        }
+        return false;
+    }
+
+    private boolean expressionIsBoolean(SigmaParser.ExpressionContext expr) {
+        if (expr == null) return false;
+        // If it's a literal boolean like true/false
+        if (expr.primary() != null && expr.primary().literal() != null && expr.primary().literal().BOOLEAN() != null) return true;
+        // If operator is a comparison or equality, result is boolean
+        if (expr.getChildCount() == 3 && isOperator(expr.getChild(1).getText())) {
+            String op = expr.getChild(1).getText();
+            if ("<".equals(op) || ">".equals(op) || "<=".equals(op) || ">=".equals(op) || "==".equals(op) || "!=".equals(op)) {
+                return true;
+            }
+        }
+        // Parenthesized expression
+        if (expr.getChildCount() == 3 && expr.getChild(0).getText().equals("(")) {
+            return expressionIsBoolean(expr.expression(0));
+        }
+        return false;
+    }
+
     private boolean isOperator(String text) {
-        return text.matches("[+\\-*/%.&|<>=!]+");
+        // include '^' as an operator
+        return text.matches("[+\\-*/%\\^.&|<>=!]+");
+    }
+
+    @Override
+    public Void visitIfStatement(SigmaParser.IfStatementContext ctx) {
+        // Evaluate condition (should leave int 0/1 on stack)
+        visit(ctx.expression());
+        Label lElse = new Label();
+        Label lEnd = new Label();
+        // If condition == 0 jump to else
+        mainMethod.visitJumpInsn(IFEQ, lElse);
+        // Then branch
+        visit(ctx.statement(0));
+        mainMethod.visitJumpInsn(GOTO, lEnd);
+        // Else branch (if present)
+        mainMethod.visitLabel(lElse);
+        if (ctx.statement().size() > 1) {
+            visit(ctx.statement(1));
+        }
+        mainMethod.visitLabel(lEnd);
+        return null;
+    }
+
+    @Override
+    public Void visitWhileStatement(SigmaParser.WhileStatementContext ctx) {
+        Label lStart = new Label();
+        Label lEnd = new Label();
+        mainMethod.visitLabel(lStart);
+        // Evaluate condition
+        visit(ctx.expression());
+        // If condition == 0, exit loop
+        mainMethod.visitJumpInsn(IFEQ, lEnd);
+        // Loop body
+        visit(ctx.statement());
+        // Jump back to start
+        mainMethod.visitJumpInsn(GOTO, lStart);
+        mainMethod.visitLabel(lEnd);
+        return null;
     }
 
     @Override
@@ -376,6 +742,62 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
         return null;
     }
 
+    // Infer expression type using available symbol/type info. This is a lightweight heuristic used by codegen.
+    private org.example.semantic.SigmaType getExpressionSigmaType(SigmaParser.ExpressionContext expr) {
+        if (expr == null) return org.example.semantic.SigmaType.UNKNOWN;
+        if (expr.primary() != null && expr.primary().literal() != null) {
+            if (expr.primary().literal().INTEGER() != null) return org.example.semantic.SigmaType.INT;
+            if (expr.primary().literal().DOUBLE() != null) return org.example.semantic.SigmaType.DOUBLE;
+            if (expr.primary().literal().BOOLEAN() != null) return org.example.semantic.SigmaType.BOOLEAN;
+            if (expr.primary().literal().STRING() != null) return org.example.semantic.SigmaType.STRING;
+        }
+        if (expr.primary() != null && expr.primary().IDENTIFIER() != null) {
+            String name = expr.primary().IDENTIFIER().getText();
+            org.example.semantic.SigmaType vt = variableTypes.get(name);
+            if (vt != null) return vt;
+            Symbol s = symbolTable.lookup(name);
+            if (s != null) return s.getType();
+        }
+        // Binary expression
+        if (expr.expression().size() == 2) {
+            // If operator is a comparison or equality, result is boolean
+            String op = expr.getChild(1).getText();
+            if ("<".equals(op) || ">".equals(op) || "<=".equals(op) || ">=".equals(op) || "==".equals(op) || "!=".equals(op)) {
+                return org.example.semantic.SigmaType.BOOLEAN;
+            }
+            org.example.semantic.SigmaType l = getExpressionSigmaType(expr.expression(0));
+            org.example.semantic.SigmaType r = getExpressionSigmaType(expr.expression(1));
+            if (l == org.example.semantic.SigmaType.DOUBLE || r == org.example.semantic.SigmaType.DOUBLE) return org.example.semantic.SigmaType.DOUBLE;
+            if (l == org.example.semantic.SigmaType.INT && r == org.example.semantic.SigmaType.INT) return org.example.semantic.SigmaType.INT;
+            return org.example.semantic.SigmaType.UNKNOWN;
+        }
+
+        return org.example.semantic.SigmaType.UNKNOWN;
+    }
+
+    /**
+     * Helper: infer type when left operand is available as primary on the parent expression.
+     */
+    private org.example.semantic.SigmaType getExpressionSigmaTypeFromPrimary(SigmaParser.ExpressionContext ctx) {
+        if (ctx == null) return org.example.semantic.SigmaType.UNKNOWN;
+        if (ctx.primary() != null) {
+            if (ctx.primary().literal() != null) {
+                if (ctx.primary().literal().INTEGER() != null) return org.example.semantic.SigmaType.INT;
+                if (ctx.primary().literal().DOUBLE() != null) return org.example.semantic.SigmaType.DOUBLE;
+                if (ctx.primary().literal().BOOLEAN() != null) return org.example.semantic.SigmaType.BOOLEAN;
+                if (ctx.primary().literal().STRING() != null) return org.example.semantic.SigmaType.STRING;
+            }
+            if (ctx.primary().IDENTIFIER() != null) {
+                String name = ctx.primary().IDENTIFIER().getText();
+                org.example.semantic.SigmaType vt = variableTypes.get(name);
+                if (vt != null) return vt;
+                Symbol s = symbolTable.lookup(name);
+                if (s != null) return s.getType();
+            }
+        }
+        return org.example.semantic.SigmaType.UNKNOWN;
+    }
+
     @Override
     public Void visitLiteral(SigmaParser.LiteralContext ctx) {
         if (ctx.STRING() != null) {
@@ -386,8 +808,14 @@ public class SigmaCodeGenerator extends SigmaBaseVisitor<Void> {
         } else if (ctx.INTEGER() != null) {
             int value = Integer.parseInt(ctx.INTEGER().getText());
             mainMethod.push(value); // push primitive int
+        } else if (ctx.DOUBLE() != null) {
+            String txt = ctx.DOUBLE().getText();
+            // strip trailing d/D if present
+            if (txt.endsWith("d") || txt.endsWith("D")) txt = txt.substring(0, txt.length()-1);
+            double dv = Double.parseDouble(txt);
+            mainMethod.push(dv);
         } else if (ctx.BOOLEAN() != null) {
-            String value = ctx.BOOLEAN().getText();
+            boolean value = Boolean.parseBoolean(ctx.BOOLEAN().getText());
             mainMethod.push(value);
         } else if (ctx.getText().equals("null")) {
             mainMethod.push("null");
