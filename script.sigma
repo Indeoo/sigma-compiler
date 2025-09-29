@@ -1,0 +1,45 @@
+// Sigma language demo script (stable subset)
+// Shows only the features currently supported and runnable.
+
+runcode println("--- Minimal language demo ---");
+
+// Integer arithmetic
+runcode println("3 + 4 = " + (3 + 4));
+runcode println("4 - 3 = " + (4 - 3));
+
+// Double arithmetic
+runcode println("2.5 * 2 = " + (2.5 * 2));
+runcode println("4 / 2 = " + (4 / 2));
+
+// Comparisons and booleans
+runcode println("5 > 3 is " + (5 > 3));
+runcode println("5 == 6 is " + (5 == 6));
+runcode println("3 < 5 is " + (3 < 5));
+// Additional comparison examples
+runcode println("5 >= 5 is " + (5 >= 5));
+runcode println("2 <= 3 is " + (2 <= 3));
+
+// If-else (branching) — use string literals only inside println
+runcode
+if (5 > 3) {
+	println("ifStatement: 5 > 3 is true");
+} else {
+	println("ifStatement: 3 > 5 is false");
+}
+
+// While loop (print integer counter only) — use a block runcode
+runcode
+int cnt = 0;
+while (cnt < 3) {
+	println("Loop cycle " + cnt);
+	cnt = cnt + 1;
+}
+
+runcode println("2 ^ 3 = " + (2 ^ 3));
+runcode println("--- End of minimal demo ---");
+
+
+// Notes:
+// - string concatenation with doubles, named constants and
+//   user-defined functions are examples of features planned or partially
+//   implemented.

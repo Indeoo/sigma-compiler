@@ -9,10 +9,15 @@ declaration
     : variableDeclaration
     | methodDeclaration
     | classDeclaration
+    | constDeclaration
     ;
 
 variableDeclaration
     : type IDENTIFIER ('=' expression)? ';'
+    ;
+
+constDeclaration
+    : 'const' type IDENTIFIER ('=' expression)? ';'
     ;
 
 methodDeclaration
@@ -73,6 +78,7 @@ expression
     | expression '.' IDENTIFIER                    // member access
     | expression '(' argumentList? ')'             // method call
     | expression ('*' | '/' | '%') expression      // multiplicative
+    | (primary | '(' expression ')') '^' expression  // exponentiation (right-associative)
     | expression ('+' | '-') expression            // additive
     | expression ('<' | '<=' | '>' | '>=' | '==' | '!=') expression  // relational
     | expression ('&&' | '||') expression          // logical
@@ -92,7 +98,7 @@ primary
 
 literal
     : INTEGER
-    | FLOAT
+    | DOUBLE
     | STRING
     | BOOLEAN
     | 'null'
@@ -114,7 +120,8 @@ IDENTIFIER : [a-zA-Z_][a-zA-Z_0-9]* ;
 
 INTEGER : [0-9]+ ;
 
-FLOAT : [0-9]+ '.' [0-9]+ ;
+// Double literal: allow Groovy-like forms such as 1.5, .5, 5.
+DOUBLE : ([0-9]+ '.' [0-9]* | '.' [0-9]+) [dD]? ;
 
 STRING : '"' ( ~["\\\r\n] | '\\' . )* '"' ;
 
