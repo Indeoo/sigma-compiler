@@ -1,39 +1,39 @@
 grammar Sigma;
 
-// Parser rules
+// Parser rules (with lowercase names)
 compilationUnit
     : (declaration | statement)* EOF
     ;
 
 declaration
     : variableDeclaration
+    | constantDeclaration
     | methodDeclaration
     | classDeclaration
-    | constDeclaration
     ;
 
 variableDeclaration
-    : type IDENTIFIER ('=' expression)? ';'
+    : type IDENTIFIER (ASSIGN expression)? SEMI
     ;
 
-constDeclaration
-    : 'const' type IDENTIFIER ('=' expression)? ';'
+constantDeclaration
+    : FINAL type IDENTIFIER ASSIGN expression SEMI
     ;
 
 methodDeclaration
-    : type IDENTIFIER '(' parameterList? ')' block
+    : type IDENTIFIER LPAREN parameterList? RPAREN block
     ;
 
 classDeclaration
-    : 'class' IDENTIFIER classBody
+    : CLASS IDENTIFIER classBody
     ;
 
 classBody
-    : '{' (declaration | statement)* '}'
+    : LBRACE (declaration | statement)* RBRACE
     ;
 
 parameterList
-    : parameter (',' parameter)*
+    : parameter (COMMA parameter)*
     ;
 
 parameter
@@ -50,78 +50,143 @@ statement
     ;
 
 assignmentStatement
-    : IDENTIFIER '=' expression ';'
+    : IDENTIFIER ASSIGN expression SEMI
     ;
 
 expressionStatement
-    : expression ';'?
+    : expression SEMI?
     ;
 
 ifStatement
-    : 'if' '(' expression ')' statement ('else' statement)?
+    : IF LPAREN expression RPAREN statement (ELSE statement)?
     ;
 
 whileStatement
-    : 'while' '(' expression ')' statement
+    : WHILE LPAREN expression RPAREN statement
     ;
 
 returnStatement
-    : 'return' expression? ';'
+    : RETURN expression? SEMI
     ;
 
 block
-    : '{' (declaration | statement)* '}'
+    : LBRACE (declaration | statement)* RBRACE
     ;
 
+// Expression hierarchy with subtypes
 expression
-    : primary
-    | expression '.' IDENTIFIER                    // member access
-    | expression '(' argumentList? ')'             // method call
-    | expression ('*' | '/' | '%') expression      // multiplicative
-    | (primary | '(' expression ')') '^' expression  // exponentiation (right-associative)
-    | expression ('+' | '-') expression            // additive
-    | expression ('<' | '<=' | '>' | '>=' | '==' | '!=') expression  // relational
-    | expression ('&&' | '||') expression          // logical
-    | '(' expression ')'                           // parentheses
-    | '!' expression                               // logical not
-    | '-' expression                               // unary minus
+    : logicalOrExpression
+    ;
+
+logicalOrExpression
+    : logicalAndExpression (LOGICAL logicalAndExpression)*
+    ;
+
+logicalAndExpression
+    : relationalExpression (LOGICAL relationalExpression)*
+    ;
+
+relationalExpression
+    : additiveExpression (RELATIONAL additiveExpression)*
+    ;
+
+additiveExpression
+    : multiplicativeExpression (ADDITIVE multiplicativeExpression)*
+    ;
+
+multiplicativeExpression
+    : unaryExpression (MULTIPLICATIVE unaryExpression)*
+    ;
+
+unaryExpression
+    : NOT unaryExpression
+    | MINUS unaryExpression
+    | postfixExpression
+    ;
+
+postfixExpression
+    : primaryExpression (postfixOp)*
+    ;
+
+postfixOp
+    : DOT IDENTIFIER                           // member access
+    | LPAREN argumentList? RPAREN              // method call
+    ;
+
+primaryExpression
+    : IDENTIFIER
+    | literal
+    | LPAREN expression RPAREN                 // parenthesized expression
     ;
 
 argumentList
-    : expression (',' expression)*
-    ;
-
-primary
-    : IDENTIFIER
-    | literal
+    : expression (COMMA expression)*
     ;
 
 literal
     : INTEGER
-    | DOUBLE
+    | FLOAT
     | STRING
     | BOOLEAN
-    | 'null'
+    | NULL
     ;
 
 type
     : IDENTIFIER
-    | 'int'
-    | 'double'
-    | 'String'
-    | 'boolean'
-    | 'void'
+    | PRIMITIVE_TYPE
+    | STRING_TYPE
+    | VOID
     ;
 
-// Lexer rules
+// Lexer rules (uppercase)
+
+// Keywords
+CLASS : 'class' ;
+IF : 'if' ;
+ELSE : 'else' ;
+WHILE : 'while' ;
+RETURN : 'return' ;
+FINAL : 'final' ;
+NULL : 'null' ;
+
+// Type keywords - united
+PRIMITIVE_TYPE : 'int' | 'double' | 'float' | 'boolean' ;
+STRING_TYPE : 'String' ;
+VOID : 'void' ;
+
+// Operators - United by category
+MULTIPLICATIVE : '*' | '/' | '%' ;
+ADDITIVE : '+' | '-' ;
+RELATIONAL : '<' | '<=' | '>' | '>=' | '==' | '!=' ;
+LOGICAL : '&&' | '||' ;
+NOT : '!' ;
+ASSIGN : '=' ;
+
+// Individual operators (for unary operations)
+MINUS : '-' ;
+PLUS : '+' ;
+
+// Delimiters
+LPAREN : '(' ;
+RPAREN : ')' ;
+LBRACE : '{' ;
+RBRACE : '}' ;
+SEMI : ';' ;
+COMMA : ',' ;
+DOT : '.' ;
+
+// Literals
 BOOLEAN : 'true' | 'false' ;
 
-IDENTIFIER : [a-zA-Z_][a-zA-Z_0-9]* ;
+// Fragments for letters and digits
+fragment LETTER : [a-zA-Z] ;
+fragment DIGIT : [0-9] ;
 
-INTEGER : [0-9]+ ;
+IDENTIFIER : (LETTER | '_') (LETTER | DIGIT | '_')* ;
 
-// Double literal: allow Groovy-like forms such as 1.5, .5, 5.
-DOUBLE : ([0-9]+ '.' [0-9]* | '.' [0-9]+) [dD]? ;
+INTEGER : DIGIT+ ;
+
+FLOAT : DIGIT+ '.' DIGIT+ ;
 
 STRING : '"' ( ~["\\\r\n] | '\\' . )* '"' ;
 
