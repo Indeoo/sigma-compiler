@@ -13,7 +13,7 @@ public class SigmaLexerWrapper {
         return VOCABULARY;
     }
 
-    CommonTokenStream createLexerTable(CharStream sourceCode) {
+    public CommonTokenStream createLexerTable(CharStream sourceCode) {
         SigmaErrorListener errorListener = new SigmaErrorListener();
 
         org.example.parser.SigmaLexer lexer = new org.example.parser.SigmaLexer(sourceCode);

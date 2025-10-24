@@ -1,6 +1,10 @@
 package org.example;
 
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.example.codegen.SigmaCodeGenerator;
+import org.example.lexer.SigmaLexerWrapper;
 import org.example.parser.*;
 import org.example.semantic.*;
 
@@ -17,10 +21,12 @@ public class SigmaCompiler {
 
     private final SigmaParserWrapper parser;
     private final SigmaSemanticAnalyzer semanticAnalyzer;
+    private final SigmaLexerWrapper sigmaLexerWrapper;
 
     public SigmaCompiler() {
         this.parser = new SigmaParserWrapper();
         this.semanticAnalyzer = new SigmaSemanticAnalyzer();
+        this.sigmaLexerWrapper = new SigmaLexerWrapper();
     }
 
     /**
@@ -42,8 +48,12 @@ public class SigmaCompiler {
      */
     public CompilationResult compile(String sourceCode, String className) {
         try {
-            // Step 1: Parsing (lexical + syntax analysis)
-            ParseResult parseResult = parser.parse(sourceCode);
+            // Step 0: Lexical analysis
+            CharStream input = CharStreams.fromString(sourceCode);
+            CommonTokenStream tokens = this.sigmaLexerWrapper.createLexerTable(input);
+
+            // Step 1: Parsing (syntax analysis)
+            ParseResult parseResult = parser.parse(tokens);
             if (!parseResult.isSuccessful()) {
                 return CompilationResult.parseFailure(parseResult);
             }

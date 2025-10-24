@@ -3,6 +3,7 @@ package org.example.parser;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
 import org.example.error.SigmaErrorListener;
+import org.example.lexer.SigmaLexerWrapper;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,24 +15,30 @@ import java.nio.file.Paths;
  */
 public class SigmaParserWrapper {
 
+    private final SigmaLexerWrapper lexer = new SigmaLexerWrapper();
+
     /**
-     * Parse Sigma source code and return a ParseResult
+     * Parse Sigma source code string and return a ParseResult
      *
      * @param sourceCode the Sigma source code to parse
      * @return ParseResult containing parse tree and any syntax errors
      */
     public ParseResult parse(String sourceCode) {
+        CharStream input = CharStreams.fromString(sourceCode);
+        CommonTokenStream tokens = lexer.createLexerTable(input);
+        return parse(tokens);
+    }
+
+    /**
+     * Parse from token stream and return a ParseResult
+     *
+     * @param tokens the token stream to parse
+     * @return ParseResult containing parse tree and any syntax errors
+     */
+    public ParseResult parse(CommonTokenStream tokens) {
         try {
-            SigmaErrorListener errorListener = new SigmaErrorListener();
+             SigmaErrorListener errorListener = new SigmaErrorListener();
 
-            // Step 1: Lexical analysis
-            CharStream input = CharStreams.fromString(sourceCode);
-            org.example.parser.SigmaLexer lexer = new org.example.parser.SigmaLexer(input);
-            lexer.removeErrorListeners();
-            lexer.addErrorListener(errorListener);
-
-            // Step 2: Syntax analysis
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
             // Use the ANTLR-generated parser
             org.example.parser.SigmaParser antlrParser = new org.example.parser.SigmaParser(tokens);
             antlrParser.removeErrorListeners();
