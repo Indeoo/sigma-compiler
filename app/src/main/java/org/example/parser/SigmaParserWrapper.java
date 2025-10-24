@@ -24,8 +24,7 @@ public class SigmaParserWrapper {
      * @return ParseResult containing parse tree and any syntax errors
      */
     public ParseResult parse(String sourceCode) {
-        CharStream input = CharStreams.fromString(sourceCode);
-        CommonTokenStream tokens = lexer.createLexerTable(input);
+        CommonTokenStream tokens = lexer.createLexerTable(sourceCode);
         return parse(tokens);
     }
 

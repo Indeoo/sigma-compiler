@@ -1,8 +1,16 @@
 package org.example.parser;
 
+import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.example.lexer.SigmaLexerWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.example.parser.SigmaParser;
+import static org.example.parser.SigmaParser.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -12,22 +20,59 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SigmaParserWrapperTest {
 
     private SigmaParserWrapper parser;
+    private SigmaLexerWrapper lexer;
 
     @BeforeEach
     void setUp() {
         parser = new SigmaParserWrapper();
+        lexer = new SigmaLexerWrapper();
     }
 
     @Test
     void testValidVariableDeclarations() {
-        String code = """
-            int x = 10;
-            double y = 3.14;
-            String name = "test";
-            boolean flag = true;
-            """;
+        // Manually create tokens without using the lexer
+        // Simulates: int x = 10; double y = 3.14; String name = "test"; boolean flag = true;
 
-        ParseResult result = parser.parse(code);
+        List<Token> tokenList = new ArrayList<>();
+
+        // Line 1: int x = 10;
+        tokenList.add(new CommonToken(SigmaParser.PRIMITIVE_TYPE, "int"));
+        tokenList.add(new CommonToken(SigmaParser.IDENTIFIER, "x"));
+        tokenList.add(new CommonToken(SigmaParser.ASSIGN, "="));
+        tokenList.add(new CommonToken(SigmaParser.INTEGER, "10"));
+        tokenList.add(new CommonToken(SigmaParser.SEMI, ";"));
+
+        // Line 2: double y = 3.14;
+        tokenList.add(new CommonToken(SigmaParser.PRIMITIVE_TYPE, "double"));
+        tokenList.add(new CommonToken(SigmaParser.IDENTIFIER, "y"));
+        tokenList.add(new CommonToken(SigmaParser.ASSIGN, "="));
+        tokenList.add(new CommonToken(SigmaParser.FLOAT, "3.14"));
+        tokenList.add(new CommonToken(SigmaParser.SEMI, ";"));
+
+        // Line 3: String name = "test";
+        tokenList.add(new CommonToken(SigmaParser.STRING_TYPE, "String"));
+        tokenList.add(new CommonToken(SigmaParser.IDENTIFIER, "name"));
+        tokenList.add(new CommonToken(SigmaParser.ASSIGN, "="));
+        tokenList.add(new CommonToken(SigmaParser.STRING, "\"test\""));
+        tokenList.add(new CommonToken(SigmaParser.SEMI, ";"));
+
+        // Line 4: boolean flag = true;
+        tokenList.add(new CommonToken(SigmaParser.PRIMITIVE_TYPE, "boolean"));
+        tokenList.add(new CommonToken(SigmaParser.IDENTIFIER, "flag"));
+        tokenList.add(new CommonToken(SigmaParser.ASSIGN, "="));
+        tokenList.add(new CommonToken(SigmaParser.BOOLEAN, "true"));
+        tokenList.add(new CommonToken(SigmaParser.SEMI, ";"));
+
+        // EOF token
+        tokenList.add(new CommonToken(Token.EOF, "<EOF>"));
+
+        // Create token stream from manually constructed tokens
+        ListTokenSource tokenSource = new ListTokenSource(tokenList);
+        CommonTokenStream tokens = new CommonTokenStream(tokenSource);
+
+        // Parse using the manually created token stream
+        ParseResult result = parser.parse(tokens);
+
         assertTrue(result.isSuccessful());
         assertNotNull(result.getParseTree());
         assertEquals(0, result.getErrorCount());

@@ -1,7 +1,5 @@
 package org.example;
 
-import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.example.codegen.SigmaCodeGenerator;
 import org.example.lexer.SigmaLexerWrapper;
@@ -49,8 +47,7 @@ public class SigmaCompiler {
     public CompilationResult compile(String sourceCode, String className) {
         try {
             // Step 0: Lexical analysis
-            CharStream input = CharStreams.fromString(sourceCode);
-            CommonTokenStream tokens = this.sigmaLexerWrapper.createLexerTable(input);
+            CommonTokenStream tokens = this.sigmaLexerWrapper.createLexerTable(sourceCode);
 
             // Step 1: Parsing (syntax analysis)
             ParseResult parseResult = parser.parse(tokens);

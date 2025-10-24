@@ -1,7 +1,5 @@
 package org.example.lexer;
 
-import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.junit.jupiter.api.Test;
@@ -11,11 +9,11 @@ class SigmaLexerWrapperTest {
     @Test
     void testLexer() {
         // Create a lexer
-        CharStream input = CharStreams.fromString("x + 5");
+        String sourceCode = "x + 5";
 
         SigmaLexerWrapper sigmaLexerWrapper = new SigmaLexerWrapper();
 
-        CommonTokenStream tokens = sigmaLexerWrapper.createLexerTable(input);
+        CommonTokenStream tokens = sigmaLexerWrapper.createLexerTable(sourceCode);
 
         for (Token token : tokens.getTokens()) {
             System.out.println("Type: " + sigmaLexerWrapper.getVocabulary().getSymbolicName(token.getType()));
