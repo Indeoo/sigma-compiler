@@ -4,3 +4,16 @@
 # Ignore Gradle build output directory
 build
 .idea
+
+# ANTLR generated sources
+**/gen/
+
+# Compiled class files
+*.class
+
+# Debug files
+*.java
+!app/src/**/*.java
+
+# macOS files
+.DS_Store

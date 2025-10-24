@@ -26,14 +26,14 @@ public class SigmaParserWrapper {
 
             // Step 1: Lexical analysis
             CharStream input = CharStreams.fromString(sourceCode);
-            SigmaLexer lexer = new SigmaLexer(input);
+            org.example.parser.SigmaLexer lexer = new org.example.parser.SigmaLexer(input);
             lexer.removeErrorListeners();
             lexer.addErrorListener(errorListener);
 
             // Step 2: Syntax analysis
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             // Use the ANTLR-generated parser
-            SigmaParser antlrParser = new SigmaParser(tokens);
+            org.example.parser.SigmaParser antlrParser = new org.example.parser.SigmaParser(tokens);
             antlrParser.removeErrorListeners();
             antlrParser.addErrorListener(errorListener);
 

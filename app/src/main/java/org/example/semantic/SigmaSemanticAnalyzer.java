@@ -310,127 +310,9 @@ public class SigmaSemanticAnalyzer extends SigmaBaseVisitor<SigmaType> {
     }
 
     @Override
-    public SigmaType visitExpression(SigmaParser.ExpressionContext ctx) {
-        // Quick special-case: Math.pow(...) may appear as a primary/member call; handle it early to avoid 'Undefined identifier Math'
-        String ctxText = ctx.getText();
-        if (ctxText != null && ctxText.contains("Math.pow(")) {
-            // Visit argument list if present
-            if (ctx.argumentList() != null) visit(ctx.argumentList());
-            return SigmaType.DOUBLE;
-        }
-
-        if (ctx.primary() != null) {
-            return visit(ctx.primary());
-        }
-
-        // Binary operations
-        if (ctx.expression().size() == 2) {
-            SigmaType leftType = visit(ctx.expression(0));
-            SigmaType rightType = visit(ctx.expression(1));
-            String operator = getOperatorFromContext(ctx);
-
-            SigmaType resultType = SigmaType.getBinaryOperationResultType(leftType, rightType, operator);
-            if (resultType == SigmaType.UNKNOWN) {
-                addError("Invalid operation " + leftType + " " + operator + " " + rightType);
-            }
-            return resultType;
-        }
-
-        // Unary operations
-        if (ctx.expression().size() == 1) {
-            SigmaType operandType = visit(ctx.expression(0));
-            String operator = getOperatorFromContext(ctx);
-
-            if (operator.equals("!") && operandType != SigmaType.BOOLEAN && operandType != SigmaType.UNKNOWN) {
-                addError("Logical NOT can only be applied to boolean, got " + operandType);
-                return SigmaType.UNKNOWN;
-            } else if (operator.equals("-") && operandType != SigmaType.INT &&
-                      operandType != SigmaType.DOUBLE && operandType != SigmaType.UNKNOWN) {
-                addError("Unary minus can only be applied to numbers, got " + operandType);
-                return SigmaType.UNKNOWN;
-            }
-
-            return operandType;
-        }
-
-        // Method call like: <expression> '(' argumentList? ')'
-        if (ctx.getChildCount() >= 3 && ctx.getChild(1).getText().equals("(")) {
-            // left expression is ctx.expression(0)
-            if (ctx.expression().size() > 0) {
-                SigmaParser.ExpressionContext left = ctx.expression(0);
-                String leftText = left.getText();
-                // Handle Math.pow(...) pattern where left is 'Math.pow'
-                if (leftText.startsWith("Math.")) {
-                    // ensure it's pow
-                    int dot = leftText.indexOf('.');
-                    String member = leftText.substring(dot + 1);
-                    if (member.startsWith("pow")) {
-                        // Visit arguments
-                        if (ctx.argumentList() != null) visit(ctx.argumentList());
-                        return SigmaType.DOUBLE;
-                    }
-                }
-            }
-
-            // If not a member-style call, try the IDENTIFIER-based method handling
-            if (ctx.IDENTIFIER() != null) {
-                String methodName = ctx.IDENTIFIER().getText();
-                // Handle System.out.println calls specially
-                if (methodName.equals("println") || methodName.equals("print")) {
-                    if (ctx.argumentList() != null) visit(ctx.argumentList());
-                    return SigmaType.VOID;
-                }
-
-                Symbol methodSymbol = symbolTable.lookup(methodName);
-                if (methodSymbol == null) {
-                    addError("Undefined method '" + methodName + "'");
-                    return SigmaType.UNKNOWN;
-                }
-                if (methodSymbol.getSymbolType() != Symbol.SymbolType.METHOD) {
-                    addError("'" + methodName + "' is not a method");
-                    return SigmaType.UNKNOWN;
-                }
-                if (ctx.argumentList() != null) visit(ctx.argumentList());
-                return methodSymbol.getType();
-            }
-        }
-
-        return SigmaType.UNKNOWN;
-    }
-
-    @Override
-    public SigmaType visitPrimary(SigmaParser.PrimaryContext ctx) {
-        if (ctx.IDENTIFIER() != null) {
-            String varName = ctx.IDENTIFIER().getText();
-
-            // Handle special built-in identifiers
-            if (varName.equals("System")) {
-                return SigmaType.UNKNOWN; // System object, we'll handle it in method calls
-            }
-
-            Symbol symbol = symbolTable.lookup(varName);
-
-            if (symbol == null) {
-                addError("Undefined identifier '" + varName + "'");
-                return SigmaType.UNKNOWN;
-            }
-
-            return symbol.getType();
-        }
-
-        if (ctx.literal() != null) {
-            return visit(ctx.literal());
-        }
-
-        return SigmaType.UNKNOWN;
-    }
-
-    @Override
     public SigmaType visitLiteral(SigmaParser.LiteralContext ctx) {
         if (ctx.INTEGER() != null) {
             return SigmaType.INT;
-        } else if (ctx.DOUBLE() != null) {
-            return SigmaType.DOUBLE;
         } else if (ctx.STRING() != null) {
             return SigmaType.STRING;
         } else if (ctx.BOOLEAN() != null) {
@@ -439,29 +321,6 @@ public class SigmaSemanticAnalyzer extends SigmaBaseVisitor<SigmaType> {
             return SigmaType.NULL;
         }
         return SigmaType.UNKNOWN;
-    }
-
-    @Override
-    public SigmaType visitConstDeclaration(SigmaParser.ConstDeclarationContext ctx) {
-        // Minimal support: treat const like a variable that is read-only at semantic level.
-        String name = ctx.IDENTIFIER().getText();
-        SigmaType t = getTypeFromContext(ctx.type());
-
-        if (symbolTable.isDefinedInCurrentScope(name)) {
-            addError("Constant '" + name + "' is already declared in this scope");
-            return SigmaType.UNKNOWN;
-        }
-
-    Symbol sym = new Symbol(name, t, Symbol.SymbolType.VARIABLE);
-        if (ctx.expression() != null) {
-            SigmaType exprType = visit(ctx.expression());
-            if (!t.isCompatibleWith(exprType)) {
-                addError("Cannot assign " + exprType + " to constant '" + name + "' of type " + t);
-            }
-            sym.setValue(null);
-        }
-        symbolTable.define(sym);
-        return t;
     }
 
     // Helper methods
