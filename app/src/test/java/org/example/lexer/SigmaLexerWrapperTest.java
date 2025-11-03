@@ -280,6 +280,7 @@ class SigmaLexerWrapperTest {
                 count = count + 1;
                 sum = sum + count;
             }
+            // COMMENT
             """;
         CommonTokenStream tokens = lexer.createLexerTable(sourceCode);
         List<Token> tokenList = tokens.getTokens();

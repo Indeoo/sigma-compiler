@@ -155,6 +155,7 @@ STRING_TYPE : 'String' ;
 VOID : 'void' ;
 
 // Operators - United by category
+POWER : '**' ;
 MULTIPLICATIVE : '*' | '/' | '%' ;
 ADDITIVE : '+' | '-' ;
 RELATIONAL : '<' | '<=' | '>' | '>=' | '==' | '!=' ;
