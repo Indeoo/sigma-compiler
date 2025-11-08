@@ -95,7 +95,11 @@ additiveExpression
     ;
 
 multiplicativeExpression
-    : unaryExpression (MULTIPLICATIVE unaryExpression)*
+    : powerExpression (MULTIPLICATIVE powerExpression)*
+    ;
+
+powerExpression
+    : unaryExpression (POWER powerExpression)?
     ;
 
 unaryExpression
@@ -155,7 +159,7 @@ STRING_TYPE : 'String' ;
 VOID : 'void' ;
 
 // Operators - United by category
-POWER : '**' ;
+POWER : '**' | '^' ;
 MULTIPLICATIVE : '*' | '/' | '%' ;
 ADDITIVE : '+' | '-' ;
 RELATIONAL : '<' | '<=' | '>' | '>=' | '==' | '!=' ;

@@ -21,6 +21,42 @@ public class CompilerApp {
         SigmaCompiler compiler = new SigmaCompiler();
         SigmaRunner runner = new SigmaRunner();
 
+        // Support quick recursive-descent syntax check without ANTLR.
+        // Usage: --rd <file>
+        if (args.length >= 2 && ("--rd".equals(args[0]) || "-rd".equals(args[0]))) {
+            String filename = args[1];
+            try {
+                String src = Files.readString(Paths.get(filename));
+                java.util.List<String> errs = org.example.parser.RecursiveDescentParser.parseAndCollectErrors(src);
+                if (errs.isEmpty()) {
+                    System.out.println("No syntax errors (recursive-descent check)");
+                } else {
+                    System.err.println("Syntax errors (recursive-descent):");
+                    for (String e : errs) System.err.println(e);
+                    System.exit(1);
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to read file for rd parse: " + e.getMessage());
+                System.exit(2);
+            }
+            return;
+        }
+
+        // Dump tokens for debugging: --dump-tokens <file>
+        if (args.length >= 2 && ("--dump-tokens".equals(args[0]) || "-dt".equals(args[0]))) {
+            String filename = args[1];
+            try {
+                String src = Files.readString(Paths.get(filename));
+                java.util.List<String> toks = org.example.parser.RecursiveDescentParser.dumpTokens(src);
+                System.out.println("Token dump for: " + filename);
+                for (String t : toks) System.out.println(t);
+            } catch (Exception e) {
+                System.err.println("Failed to read file for token dump: " + e.getMessage());
+                System.exit(2);
+            }
+            return;
+        }
+
         if (args.length == 0) {
             // Interactive mode - simple example
             System.out.println("Sigma Compiler - Interactive Mode");
