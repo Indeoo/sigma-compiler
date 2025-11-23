@@ -46,9 +46,21 @@ public class SigmaCompiler {
             // Step 1: Parse to RD AST
             RecursiveDescentParser.ParseAstResult rd = RecursiveDescentParser.parseToAst(sourceCode);
             if (rd.errors != null && !rd.errors.isEmpty()) {
-                // wrap tokenization/parse errors into ParseResult and return
-                org.example.parser.ParseResult pr = org.example.parser.ParseResult.failure(rd.errors);
-                return CompilationResult.parseFailure(pr);
+                // Separate non-fatal tokenization hints (suggestions) from real parse errors
+                java.util.List<String> hints = new java.util.ArrayList<>();
+                java.util.List<String> real = new java.util.ArrayList<>();
+                for (String m : rd.errors) {
+                    if (m != null && m.contains("Did you mean")) hints.add(m);
+                    else real.add(m);
+                }
+                if (!real.isEmpty()) {
+                    // wrap parse errors into ParseResult and return failure
+                    org.example.parser.ParseResult pr = org.example.parser.ParseResult.failure(real);
+                    return CompilationResult.parseFailure(pr);
+                } else {
+                    // only hints/warnings; print them to stderr and continue
+                    for (String w : hints) System.err.println("Warning: " + w);
+                }
             }
 
             // Step 2: Semantic analysis (RD)

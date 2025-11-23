@@ -26,4 +26,4 @@ double result3 = power(2.0, 8);
 
 println("5.0 + 3.0 = " + result1);
 println("4.0 * 2.5 = " + result2);
-println("2.0 ^ 8 = " + result3);
+println("2.0 ** 8 = " + result3);

@@ -24,8 +24,8 @@ println(1 2);
 // 7a: Force a right-child for a left-associative operator (+)
 println(1 + (2 + 3));
 
-// 7b: Force a left-child for the power operator (^) which must be right-associative
-println((1 ^ 2) ^ 3);
+// 7b: Force a left-child for the power operator (**) which must be right-associative
+println((1 ** 2) ** 3);
 
 // 8) Complex case: unterminated string
 println("unterminated string);

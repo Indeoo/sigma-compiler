@@ -1,1 +1,1 @@
-runcode println("pow: " + (2 ^ 3));
+runcode println("pow: " + (2 ** 3));

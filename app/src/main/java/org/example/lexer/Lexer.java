@@ -13,7 +13,7 @@ public class Lexer {
         WS,               // пробіли й табуляція
         LINE_COMMENT,     // // ...
         BLOCK_COMMENT,    // /* ... */
-        // PAIR/SINGLE OPERATORS
+        // ПАРНІ/ОДИНОЧНІ ОПЕРАТОРИ
         LE, GE, EQ, NE,   // <= >= == !=
         LT, GT, ASSIGN, NOT, // < > = !
         AND_AND, OR_OR,   // && ||

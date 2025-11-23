@@ -162,8 +162,7 @@ public class CompilerApp {
             if (line.startsWith("runfile ") || line.startsWith("runcode") || line.startsWith("compile ") || line.startsWith("print ")) {
                 return true;
             }
-            // If first non-empty line looks like Sigma code (type or identifier with semicolon), treat as source
-            break;
+            // continue scanning other lines; treat as source only if no directives are found
         }
         return false;
     }
@@ -233,8 +232,7 @@ public class CompilerApp {
             }
         }
 
-        // Second pass: execute script lines, skipping prelude lines; accumulate code so declarations are preserved once
-        StringBuilder accumulated = new StringBuilder(prelude.toString());
+    // Second pass: execute script lines, skipping prelude lines; prelude contains top-level declarations preserved for blocks
         for (int i = 0; i < lines.size(); i++) {
             if (isPreludeLine[i]) continue;
             String raw = lines.get(i);
@@ -246,7 +244,7 @@ public class CompilerApp {
                 continue;
             }
 
-                if (line.startsWith("runfile ")) {
+            if (line.startsWith("runfile ")) {
                 String target = line.substring("runfile ".length()).strip();
                 Path targetPath = scriptPath.getParent() != null ? scriptPath.getParent().resolve(target) : Paths.get(target);
                 System.out.println("Script: runfile " + targetPath);
@@ -264,30 +262,28 @@ public class CompilerApp {
                 continue;
             }
 
-                // Implicit code block: consecutive Sigma statements (lines ending with ';', containing '=', or using println)
-                if (looksLikeSigmaStatement(line)) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(line).append('\n');
-                    // gather following Sigma-like lines
-                    int j = i + 1;
-                    for (; j < lines.size(); j++) {
-                        String next = lines.get(j).strip();
-                        if (next.isEmpty() || next.startsWith("#")) break;
-                        if (next.startsWith("//")) continue;
-                        // stop if next is a directive
-                        if (next.startsWith("print ") || next.startsWith("runfile ") || next.startsWith("compile ") || next.startsWith("runcode")) break;
-                        // otherwise treat as Sigma code line
-                        sb.append(next).append('\n');
-                    }
-                    i = j - 1; // advance outer loop
-                    System.out.println("Script: implicit runcode block - executing. Block content:\n" + sb.toString());
-                    // Append block to accumulated program and run the full accumulated program
-                    accumulated.append('\n').append(sb.toString());
-                    runInlineCode(compiler, runner, accumulated.toString(), "");
-                    continue;
+            // Implicit Sigma statement block: gather consecutive Sigma-like lines and append to accumulated program
+            if (looksLikeSigmaStatement(line)) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(line).append('\n');
+                int j = i + 1;
+                for (; j < lines.size(); j++) {
+                    String next = lines.get(j).strip();
+                    if (next.isEmpty() || next.startsWith("#")) break;
+                    if (next.startsWith("//")) continue;
+                    if (next.startsWith("print ") || next.startsWith("runfile ") || next.startsWith("compile ") || next.startsWith("runcode")) break;
+                    sb.append(next).append('\n');
                 }
+                i = j - 1; // advance outer loop
+                System.out.println("Script: implicit runcode block - executing. Block content:\n" + sb.toString());
+                if (System.getenv("SIGMA_SCRIPT_DEBUG") != null) {
+                    System.out.println("--- Prelude + block to compile ---\n" + prelude.toString() + "\n" + sb.toString());
+                }
+                runInlineCode(compiler, runner, prelude.toString(), sb.toString());
+                continue;
+            }
 
-                if (line.startsWith("compile ")) {
+            if (line.startsWith("compile ")) {
                 String target = line.substring("compile ".length()).strip();
                 Path targetPath = scriptPath.getParent() != null ? scriptPath.getParent().resolve(target) : Paths.get(target);
                 System.out.println("Script: compile " + targetPath);
@@ -304,33 +300,33 @@ public class CompilerApp {
             if (line.startsWith("runcode ")) {
                 String code = line.substring("runcode ".length());
                 System.out.println("Script: runcode (inline)");
-                accumulated.append('\n').append(code);
-                runInlineCode(compiler, runner, accumulated.toString(), "");
+                if (System.getenv("SIGMA_SCRIPT_DEBUG") != null) {
+                    System.out.println("--- Prelude + inline to compile ---\n" + prelude.toString() + "\n" + code);
+                }
+                runInlineCode(compiler, runner, prelude.toString(), code);
                 continue;
             }
 
             if (line.equals("runcode")) {
-                // Gather following Sigma-like lines until next directive (allow blank lines inside block)
                 StringBuilder sb = new StringBuilder();
                 int j = i + 1;
                 for (; j < lines.size(); j++) {
                     String next = lines.get(j);
                     String stripped = next.strip();
-                    // stop collecting when we see a directive at line start
                     if (stripped.startsWith("print ") || stripped.startsWith("runfile ") || stripped.startsWith("compile ") || stripped.startsWith("runcode")) break;
-                    // skip comment lines but keep blank lines in code
                     if (stripped.startsWith("#") || stripped.startsWith("//")) continue;
                     sb.append(next).append('\n');
                 }
                 i = j - 1;
                 System.out.println("Script: runcode (block) - executing\n" + sb.toString());
-                accumulated.append('\n').append(sb.toString());
-                runInlineCode(compiler, runner, accumulated.toString(), "");
+                if (System.getenv("SIGMA_SCRIPT_DEBUG") != null) {
+                    System.out.println("--- Prelude + block to compile ---\n" + prelude.toString() + "\n" + sb.toString());
+                }
+                runInlineCode(compiler, runner, prelude.toString(), sb.toString());
                 continue;
             }
 
             if (line.equals("runcode <<")) {
-                // Heredoc: gather lines until '>>'
                 StringBuilder sb = new StringBuilder();
                 i++; // move to next line
                 for (; i < lines.size(); i++) {
@@ -340,14 +336,18 @@ public class CompilerApp {
                 }
                 String code = sb.toString();
                 System.out.println("Script: runcode (heredoc) - executing block");
-                accumulated.append('\n').append(code);
-                runInlineCode(compiler, runner, accumulated.toString(), "");
+                if (System.getenv("SIGMA_SCRIPT_DEBUG") != null) {
+                    System.out.println("--- Prelude + heredoc to compile ---\n" + prelude.toString() + "\n" + code);
+                }
+                runInlineCode(compiler, runner, prelude.toString(), code);
                 continue;
             }
 
             // Unknown directive - warn
             System.err.println("Unknown script directive: '" + line + "' in " + scriptPath);
         }
+
+        // All runcode blocks are executed immediately as they are encountered.
     }
 
     private static void runInlineCode(SigmaCompiler compiler, SigmaRunner runner, String prelude, String code) {

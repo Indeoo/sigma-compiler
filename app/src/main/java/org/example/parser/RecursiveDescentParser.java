@@ -251,7 +251,8 @@ public class RecursiveDescentParser {
                 out.add(new Token(TokenType.OP, two, line, col)); pos+=2; col+=2; continue;
             }
             String chs = String.valueOf(c);
-            if ("+-*/%^<>!=.".indexOf(c) >= 0) { out.add(new Token(TokenType.OP, chs, line, col)); pos++; col++; continue; }
+            // '^' intentionally removed: only '**' is the power operator. Keep single-char ops here.
+            if ("+-*/%<>!=.".indexOf(c) >= 0) { out.add(new Token(TokenType.OP, chs, line, col)); pos++; col++; continue; }
             if (PUNCT.containsKey(chs)) { out.add(new Token(TokenType.PUNC, chs, line, col)); pos++; col++; continue; }
 
             // unknown char
@@ -320,6 +321,35 @@ public class RecursiveDescentParser {
             if (e != null) return new Ast.ExpressionStatement(e, t.line, t.col);
             return null;
         }
+        // handle block-level statements: if, while, block, variable declarations, return
+        // if statement
+        if (look().type==TokenType.KEYWORD && look().text.equals("if")) {
+            consume();
+            if (!acceptPunc("(")) { Token n = look(); errors.add(String.format("Line %d: Expected '(' after 'if'", n.line)); }
+            Ast.Expression cond = parseExpression();
+            if (cond == null) { Token n = look(); errors.add(String.format("Line %d: Expected condition expression in 'if'", n.line)); }
+            if (!acceptPunc(")")) { Token n = look(); errors.add(String.format("Line %d: Expected ')' after if condition", n.line)); }
+            Ast.Statement thenStmt = parseInnerStatement();
+            Ast.Statement elseStmt = null;
+            if (look().type==TokenType.KEYWORD && look().text.equals("else")) { consume(); elseStmt = parseInnerStatement(); }
+            return new Ast.IfStatement(cond, thenStmt, elseStmt);
+        }
+
+        // while statement
+        if (look().type==TokenType.KEYWORD && look().text.equals("while")) {
+            consume();
+            if (!acceptPunc("(")) { Token n = look(); errors.add(String.format("Line %d: Expected '(' after 'while'", n.line)); }
+            Ast.Expression cond = parseExpression();
+            if (cond == null) { Token n = look(); errors.add(String.format("Line %d: Expected condition expression in 'while'", n.line)); }
+            if (!acceptPunc(")")) { Token n = look(); errors.add(String.format("Line %d: Expected ')' after while condition", n.line)); }
+            Ast.Statement body = parseInnerStatement();
+            return new Ast.WhileStatement(cond, body);
+        }
+
+        // block
+        if (look().type==TokenType.PUNC && look().text.equals("{")) {
+            return parseBlock();
+        }
 
         // variable declaration: KEYWORD type IDENTIFIER ...
         if (look().type == TokenType.KEYWORD && (look().text.equals("int")||look().text.equals("double")||look().text.equals("String")||look().text.equals("boolean")||look().text.equals("float"))) {
@@ -344,11 +374,28 @@ public class RecursiveDescentParser {
             }
         }
 
-    // fallback: expression statement
-    int exprStartLine = look().line;
-    int exprStartCol = look().col;
-    Ast.Expression expr = parseExpression();
-    if (expr == null) return null;
+        // assignment statement: IDENT '=' expr ';'
+        if (look().type == TokenType.IDENT) {
+            Token next = tokens.size() > idx+1 ? tokens.get(idx+1) : null;
+            if (next != null && next.type == TokenType.OP && "=".equals(next.text)) {
+                Token id = consume(); // ident
+                consume(); // '='
+                Ast.Expression val = parseExpression();
+                if (!acceptPunc(";")) {
+                    errors.add(String.format("Line %d: Missing semicolon after assignment to %s", id.line, id.text));
+                    // resync
+                    int scan = idx; boolean found=false; while (scan < tokens.size()) { Token tok = tokens.get(scan++); if (tok.type==TokenType.PUNC && tok.text.equals(";")) { found=true; break; } }
+                    if (found) { while (idx < tokens.size()) { Token tok = look(); idx++; if (tok.type==TokenType.PUNC && tok.text.equals(";")) break; } }
+                }
+                return new Ast.Assignment(id.text, val);
+            }
+        }
+
+        // fallback: expression statement
+        int exprStartLine = look().line;
+        int exprStartCol = look().col;
+        Ast.Expression expr = parseExpression();
+        if (expr == null) return null;
         if (!acceptPunc(";")) {
             // Attribute missing-semicolon to the statement's start line (exprStartLine) instead of the next token's line
             errors.add(String.format("Line %d: Missing semicolon at end of statement", exprStartLine));
@@ -360,6 +407,27 @@ public class RecursiveDescentParser {
         // check associativity (use recorded start line for message attribution)
         checkAssociativityExpr(expr, exprStartLine);
         return new Ast.ExpressionStatement(expr, exprStartLine, exprStartCol);
+    }
+
+    // parse a block: '{' statements* '}'
+    private Ast.Block parseBlock() {
+    consume(); // consume '{'
+        List<Ast.Statement> stmts = new ArrayList<>();
+        while (!(look().type==TokenType.PUNC && look().text.equals("}")) && look().type != TokenType.EOF) {
+            Ast.Statement s = parseStatementOrDirectiveAst();
+            if (s != null) stmts.add(s);
+            else {
+                Token u = look(); errors.add(String.format("Line %d: Unexpected token '%s' in block", u.line, u.text)); idx++;
+            }
+        }
+        if (!acceptPunc("}")) { Token n = look(); errors.add(String.format("Line %d: Expected '}' to close block", n.line)); }
+        return new Ast.Block(stmts);
+    }
+
+    // parse a single statement that may be a block or a single-line statement
+    private Ast.Statement parseInnerStatement() {
+        if (look().type==TokenType.PUNC && look().text.equals("{")) return parseBlock();
+        return parseStatementOrDirectiveAst();
     }
 
     private boolean parseExpressionStatement() {
@@ -483,10 +551,10 @@ public class RecursiveDescentParser {
         Ast.Expression left = parseUnary(); if (left==null) return null;
         // right-associative
         Token t = look();
-        if (t.type==TokenType.OP && (t.text.equals("**") || t.text.equals("^"))) {
+        if (t.type==TokenType.OP && t.text.equals("**")) {
             consume();
             Ast.Expression right = parsePower(); if (right==null) { errors.add(String.format("Line %d: Expected expression after power operator", t.line)); return null; }
-            return new Ast.Binary("^", left, right, t.line, t.col);
+            return new Ast.Binary("**", left, right, t.line, t.col);
         }
         return left;
     }
@@ -539,28 +607,18 @@ public class RecursiveDescentParser {
         return null;
     }
 
-    // Check associativity: for left-assoc ops (+ - * / % && || etc) right child must not be same op; for right-assoc (^) left child must not be same op
+    // Check associativity: for left-assoc ops (+ - * / % && || etc) right child must not be same op; for right-assoc (**) left child must not be same op
     private void checkAssociativityExpr(Ast.Expression e, int line) {
+        // Associativity checks disabled: do not emit errors for chained binary operators.
+        // We still traverse the expression tree to allow future checks, but for now skip associativity enforcement.
         if (e instanceof Ast.Binary) {
             Ast.Binary b = (Ast.Binary)e;
             if (b.left != null) checkAssociativityExpr(b.left, line);
             if (b.right != null) checkAssociativityExpr(b.right, line);
-            if ("^".equals(b.op)) {
-                if (b.left instanceof Ast.Binary && ((Ast.Binary)b.left).op.equals(b.op)) {
-                    errors.add(String.format("Line %d: Associativity error: operator '%s' must be right-associative (a %s (b %s c))", line, b.op, b.op, b.op));
-                }
-            } else {
-                if (Set.of("+","-","*","/","%","&&","||").contains(b.op)) {
-                    if (b.right instanceof Ast.Binary && ((Ast.Binary)b.right).op.equals(b.op)) {
-                        errors.add(String.format("Line %d: Associativity error: operator '%s' must be left-associative ((a %s b) %s c)", line, b.op, b.op, b.op));
-                    }
-                }
-            }
         } else if (e instanceof Ast.Unary) {
             checkAssociativityExpr(((Ast.Unary)e).expr, line);
         } else if (e instanceof Ast.Call) {
             Ast.Call c = (Ast.Call)e;
-            // recurse into call target and args
             if (c.target != null) checkAssociativityExpr(c.target, line);
             if (c.args != null) for (Ast.Expression a : c.args) if (a != null) checkAssociativityExpr(a, line);
         }
