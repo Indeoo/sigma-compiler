@@ -3,7 +3,6 @@ package org.example;
 import org.example.codegen.SigmaCodeGeneratorRD;
 import org.example.syntax.parser.RecursiveDescentParser;
 import org.example.syntax.semantic.RDSemanticAnalyzer;
-import org.example.semantic.*;
 import org.example.syntax.parser.ParseResult;
 import org.example.syntax.semantic.SemanticResult;
 
