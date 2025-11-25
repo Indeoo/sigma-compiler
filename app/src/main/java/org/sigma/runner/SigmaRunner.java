@@ -1,6 +1,6 @@
 package org.sigma.runner;
 
-import org.sigma.CompilationResult;
+import org.sigma.compiler.CompilationResult;
 
 import java.lang.reflect.Method;
 

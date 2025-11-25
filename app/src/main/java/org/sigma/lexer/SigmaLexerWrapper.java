@@ -4,7 +4,6 @@ import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Vocabulary;
-import org.sigma.parser.SigmaLexer;
 
 /**
  * Small wrapper around the ANTLR-generated SigmaLexer to provide a
@@ -19,7 +18,7 @@ public class SigmaLexerWrapper {
      */
     public CommonTokenStream createLexerTable(String source) {
         CharStream cs = CharStreams.fromString(source == null ? "" : source);
-        SigmaLexer lexer = new SigmaLexer(cs);
+        org.example.parser.SigmaLexer lexer = new org.example.parser.SigmaLexer(cs);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         tokens.fill();
         return tokens;
@@ -31,7 +30,7 @@ public class SigmaLexerWrapper {
      */
     public Vocabulary getVocabulary() {
         // Create a temporary lexer instance to access the vocabulary
-        SigmaLexer lexer = new SigmaLexer(CharStreams.fromString(""));
+        org.example.parser.SigmaLexer lexer = new org.example.parser.SigmaLexer(CharStreams.fromString(""));
         return lexer.getVocabulary();
     }
 }

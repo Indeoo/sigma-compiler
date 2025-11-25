@@ -1,4 +1,4 @@
-package org.sigma;
+package org.sigma.compiler;
 
 import org.sigma.syntax.parser.ParseResult;
 import org.sigma.syntax.semantic.SemanticResult;

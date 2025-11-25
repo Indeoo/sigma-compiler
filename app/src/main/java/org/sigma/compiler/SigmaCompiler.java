@@ -1,4 +1,4 @@
-package org.sigma;
+package org.sigma.compiler;
 
 import org.sigma.codegen.SigmaCodeGeneratorRD;
 import org.sigma.syntax.parser.RecursiveDescentParser;
