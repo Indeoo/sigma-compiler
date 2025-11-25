@@ -1,4 +1,4 @@
-import org.example.*;
+import org.sigma.*;
 
 public class TestSimple {
     public static void main(String[] args) {
