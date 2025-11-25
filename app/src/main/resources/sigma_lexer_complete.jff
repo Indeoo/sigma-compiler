@@ -1,0 +1,1817 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--Created with JFLAP 7.1.-->
+<structure>
+    <type>fa</type>
+    <automaton>
+        <!--The list of states.-->
+        <state id="0" name="start">
+            <x>200.0</x>
+            <y>400.0</y>
+            <initial/>
+        </state>
+        
+        <!-- Keyword: class -->
+        <state id="1" name="c">
+            <x>350.0</x>
+            <y>50.0</y>
+        </state>
+        <state id="2" name="cl">
+            <x>450.0</x>
+            <y>50.0</y>
+        </state>
+        <state id="3" name="cla">
+            <x>550.0</x>
+            <y>50.0</y>
+        </state>
+        <state id="4" name="clas">
+            <x>650.0</x>
+            <y>50.0</y>
+        </state>
+        <state id="5" name="class">
+            <x>750.0</x>
+            <y>50.0</y>
+            <final/>
+        </state>
+        
+        <!-- Keyword: if -->
+        <state id="6" name="i">
+            <x>350.0</x>
+            <y>100.0</y>
+        </state>
+        <state id="7" name="if">
+            <x>450.0</x>
+            <y>100.0</y>
+            <final/>
+        </state>
+        
+        <!-- Keyword: int -->
+        <state id="8" name="in">
+            <x>450.0</x>
+            <y>120.0</y>
+        </state>
+        <state id="9" name="int">
+            <x>550.0</x>
+            <y>120.0</y>
+            <final/>
+        </state>
+        
+        <!-- Keyword: else -->
+        <state id="10" name="e">
+            <x>350.0</x>
+            <y>150.0</y>
+        </state>
+        <state id="11" name="el">
+            <x>450.0</x>
+            <y>150.0</y>
+        </state>
+        <state id="12" name="els">
+            <x>550.0</x>
+            <y>150.0</y>
+        </state>
+        <state id="13" name="else">
+            <x>650.0</x>
+            <y>150.0</y>
+            <final/>
+        </state>
+        
+        <!-- Keyword: while -->
+        <state id="14" name="w">
+            <x>350.0</x>
+            <y>200.0</y>
+        </state>
+        <state id="15" name="wh">
+            <x>450.0</x>
+            <y>200.0</y>
+        </state>
+        <state id="16" name="whi">
+            <x>550.0</x>
+            <y>200.0</y>
+        </state>
+        <state id="17" name="whil">
+            <x>650.0</x>
+            <y>200.0</y>
+        </state>
+        <state id="18" name="while">
+            <x>750.0</x>
+            <y>200.0</y>
+            <final/>
+        </state>
+        
+        <!-- Keyword: return -->
+        <state id="19" name="r">
+            <x>350.0</x>
+            <y>250.0</y>
+        </state>
+        <state id="20" name="re">
+            <x>430.0</x>
+            <y>250.0</y>
+        </state>
+        <state id="21" name="ret">
+            <x>510.0</x>
+            <y>250.0</y>
+        </state>
+        <state id="22" name="retu">
+            <x>590.0</x>
+            <y>250.0</y>
+        </state>
+        <state id="23" name="retur">
+            <x>670.0</x>
+            <y>250.0</y>
+        </state>
+        <state id="24" name="return">
+            <x>750.0</x>
+            <y>250.0</y>
+            <final/>
+        </state>
+        
+        <!-- Keyword: final -->
+        <state id="25" name="f">
+            <x>350.0</x>
+            <y>300.0</y>
+        </state>
+        <state id="26" name="fi">
+            <x>430.0</x>
+            <y>300.0</y>
+        </state>
+        <state id="27" name="fin">
+            <x>510.0</x>
+            <y>300.0</y>
+        </state>
+        <state id="28" name="fina">
+            <x>590.0</x>
+            <y>300.0</y>
+        </state>
+        <state id="29" name="final">
+            <x>670.0</x>
+            <y>300.0</y>
+            <final/>
+        </state>
+        
+        <!-- Keyword: float -->
+        <state id="30" name="fl">
+            <x>430.0</x>
+            <y>320.0</y>
+        </state>
+        <state id="31" name="flo">
+            <x>510.0</x>
+            <y>320.0</y>
+        </state>
+        <state id="32" name="floa">
+            <x>590.0</x>
+            <y>320.0</y>
+        </state>
+        <state id="33" name="float">
+            <x>670.0</x>
+            <y>320.0</y>
+            <final/>
+        </state>
+        
+        <!-- Keyword: false -->
+        <state id="34" name="fa">
+            <x>430.0</x>
+            <y>340.0</y>
+        </state>
+        <state id="35" name="fal">
+            <x>510.0</x>
+            <y>340.0</y>
+        </state>
+        <state id="36" name="fals">
+            <x>590.0</x>
+            <y>340.0</y>
+        </state>
+        <state id="37" name="false">
+            <x>670.0</x>
+            <y>340.0</y>
+            <final/>
+        </state>
+        
+        <!-- Keyword: null -->
+        <state id="38" name="n">
+            <x>350.0</x>
+            <y>370.0</y>
+        </state>
+        <state id="39" name="nu">
+            <x>430.0</x>
+            <y>370.0</y>
+        </state>
+        <state id="40" name="nul">
+            <x>510.0</x>
+            <y>370.0</y>
+        </state>
+        <state id="41" name="null">
+            <x>590.0</x>
+            <y>370.0</y>
+            <final/>
+        </state>
+        
+        <!-- Keyword: double -->
+        <state id="42" name="d">
+            <x>350.0</x>
+            <y>420.0</y>
+        </state>
+        <state id="43" name="do">
+            <x>430.0</x>
+            <y>420.0</y>
+        </state>
+        <state id="44" name="dou">
+            <x>510.0</x>
+            <y>420.0</y>
+        </state>
+        <state id="45" name="doub">
+            <x>590.0</x>
+            <y>420.0</y>
+        </state>
+        <state id="46" name="doubl">
+            <x>670.0</x>
+            <y>420.0</y>
+        </state>
+        <state id="47" name="double">
+            <x>750.0</x>
+            <y>420.0</y>
+            <final/>
+        </state>
+        
+        <!-- Keyword: boolean -->
+        <state id="48" name="b">
+            <x>350.0</x>
+            <y>470.0</y>
+        </state>
+        <state id="49" name="bo">
+            <x>420.0</x>
+            <y>470.0</y>
+        </state>
+        <state id="50" name="boo">
+            <x>490.0</x>
+            <y>470.0</y>
+        </state>
+        <state id="51" name="bool">
+            <x>560.0</x>
+            <y>470.0</y>
+        </state>
+        <state id="52" name="boole">
+            <x>630.0</x>
+            <y>470.0</y>
+        </state>
+        <state id="53" name="boolea">
+            <x>700.0</x>
+            <y>470.0</y>
+        </state>
+        <state id="54" name="boolean">
+            <x>770.0</x>
+            <y>470.0</y>
+            <final/>
+        </state>
+        
+        <!-- Keyword: String -->
+        <state id="55" name="S">
+            <x>350.0</x>
+            <y>520.0</y>
+        </state>
+        <state id="56" name="St">
+            <x>430.0</x>
+            <y>520.0</y>
+        </state>
+        <state id="57" name="Str">
+            <x>510.0</x>
+            <y>520.0</y>
+        </state>
+        <state id="58" name="Stri">
+            <x>590.0</x>
+            <y>520.0</y>
+        </state>
+        <state id="59" name="Strin">
+            <x>670.0</x>
+            <y>520.0</y>
+        </state>
+        <state id="60" name="String">
+            <x>750.0</x>
+            <y>520.0</y>
+            <final/>
+        </state>
+        
+        <!-- Keyword: void -->
+        <state id="61" name="v">
+            <x>350.0</x>
+            <y>570.0</y>
+        </state>
+        <state id="62" name="vo">
+            <x>430.0</x>
+            <y>570.0</y>
+        </state>
+        <state id="63" name="voi">
+            <x>510.0</x>
+            <y>570.0</y>
+        </state>
+        <state id="64" name="void">
+            <x>590.0</x>
+            <y>570.0</y>
+            <final/>
+        </state>
+        
+        <!-- Keyword: true -->
+        <state id="65" name="t">
+            <x>350.0</x>
+            <y>620.0</y>
+        </state>
+        <state id="66" name="tr">
+            <x>430.0</x>
+            <y>620.0</y>
+        </state>
+        <state id="67" name="tru">
+            <x>510.0</x>
+            <y>620.0</y>
+        </state>
+        <state id="68" name="true">
+            <x>590.0</x>
+            <y>620.0</y>
+            <final/>
+        </state>
+        
+        <!-- IDENTIFIER -->
+        <state id="100" name="ID">
+            <x>400.0</x>
+            <y>800.0</y>
+            <final/>
+        </state>
+        
+        <!-- INTEGER -->
+        <state id="110" name="INT">
+            <x>400.0</x>
+            <y>900.0</y>
+            <final/>
+        </state>
+        
+        <!-- FLOAT -->
+        <state id="120" name="FLOAT_DOT">
+            <x>550.0</x>
+            <y>900.0</y>
+        </state>
+        <state id="121" name="FLOAT">
+            <x>700.0</x>
+            <y>900.0</y>
+            <final/>
+        </state>
+        
+        <!-- STRING -->
+        <state id="130" name="STR_START">
+            <x>400.0</x>
+            <y>1000.0</y>
+        </state>
+        <state id="131" name="STR_BODY">
+            <x>550.0</x>
+            <y>1000.0</y>
+        </state>
+        <state id="132" name="STRING">
+            <x>700.0</x>
+            <y>1000.0</y>
+            <final/>
+        </state>
+        <state id="133" name="STR_ESC">
+            <x>550.0</x>
+            <y>1050.0</y>
+        </state>
+        
+        <!-- Operators -->
+        <state id="200" name="PLUS">
+            <x>400.0</x>
+            <y>1100.0</y>
+            <final/>
+        </state>
+        <state id="201" name="MINUS">
+            <x>400.0</x>
+            <y>1150.0</y>
+            <final/>
+        </state>
+        <state id="202" name="MULT">
+            <x>400.0</x>
+            <y>1200.0</y>
+            <final/>
+        </state>
+        <state id="203" name="DIV">
+            <x>400.0</x>
+            <y>1250.0</y>
+            <final/>
+        </state>
+        <state id="204" name="MOD">
+            <x>400.0</x>
+            <y>1300.0</y>
+            <final/>
+        </state>
+        <state id="205" name="LT">
+            <x>400.0</x>
+            <y>1350.0</y>
+            <final/>
+        </state>
+        <state id="206" name="LE">
+            <x>550.0</x>
+            <y>1350.0</y>
+            <final/>
+        </state>
+        <state id="207" name="GT">
+            <x>400.0</x>
+            <y>1400.0</y>
+            <final/>
+        </state>
+        <state id="208" name="GE">
+            <x>550.0</x>
+            <y>1400.0</y>
+            <final/>
+        </state>
+        <state id="209" name="ASSIGN">
+            <x>400.0</x>
+            <y>1450.0</y>
+            <final/>
+        </state>
+        <state id="210" name="EQ">
+            <x>550.0</x>
+            <y>1450.0</y>
+            <final/>
+        </state>
+        <state id="211" name="NOT">
+            <x>400.0</x>
+            <y>1500.0</y>
+            <final/>
+        </state>
+        <state id="212" name="NE">
+            <x>550.0</x>
+            <y>1500.0</y>
+            <final/>
+        </state>
+        <state id="213" name="AMP">
+            <x>400.0</x>
+            <y>1550.0</y>
+        </state>
+        <state id="214" name="AND">
+            <x>550.0</x>
+            <y>1550.0</y>
+            <final/>
+        </state>
+        <state id="215" name="PIPE">
+            <x>400.0</x>
+            <y>1600.0</y>
+        </state>
+        <state id="216" name="OR">
+            <x>550.0</x>
+            <y>1600.0</y>
+            <final/>
+        </state>
+        
+        <!-- Delimiters -->
+        <state id="300" name="LPAREN">
+            <x>400.0</x>
+            <y>1700.0</y>
+            <final/>
+        </state>
+        <state id="301" name="RPAREN">
+            <x>400.0</x>
+            <y>1750.0</y>
+            <final/>
+        </state>
+        <state id="302" name="LBRACE">
+            <x>400.0</x>
+            <y>1800.0</y>
+            <final/>
+        </state>
+        <state id="303" name="RBRACE">
+            <x>400.0</x>
+            <y>1850.0</y>
+            <final/>
+        </state>
+        <state id="304" name="SEMI">
+            <x>400.0</x>
+            <y>1900.0</y>
+            <final/>
+        </state>
+        <state id="305" name="COMMA">
+            <x>400.0</x>
+            <y>1950.0</y>
+            <final/>
+        </state>
+        <state id="306" name="DOT">
+            <x>400.0</x>
+            <y>2000.0</y>
+            <final/>
+        </state>
+        
+        <!--The list of transitions.-->
+        
+        <!-- Keyword: class -->
+        <transition>
+            <from>0</from>
+            <to>1</to>
+            <read>c</read>
+        </transition>
+        <transition>
+            <from>1</from>
+            <to>2</to>
+            <read>l</read>
+        </transition>
+        <transition>
+            <from>2</from>
+            <to>3</to>
+            <read>a</read>
+        </transition>
+        <transition>
+            <from>3</from>
+            <to>4</to>
+            <read>s</read>
+        </transition>
+        <transition>
+            <from>4</from>
+            <to>5</to>
+            <read>s</read>
+        </transition>
+        
+        <!-- Keyword: if -->
+        <transition>
+            <from>0</from>
+            <to>6</to>
+            <read>i</read>
+        </transition>
+        <transition>
+            <from>6</from>
+            <to>7</to>
+            <read>f</read>
+        </transition>
+        
+        <!-- Keyword: int -->
+        <transition>
+            <from>6</from>
+            <to>8</to>
+            <read>n</read>
+        </transition>
+        <transition>
+            <from>8</from>
+            <to>9</to>
+            <read>t</read>
+        </transition>
+        
+        <!-- Keyword: else -->
+        <transition>
+            <from>0</from>
+            <to>10</to>
+            <read>e</read>
+        </transition>
+        <transition>
+            <from>10</from>
+            <to>11</to>
+            <read>l</read>
+        </transition>
+        <transition>
+            <from>11</from>
+            <to>12</to>
+            <read>s</read>
+        </transition>
+        <transition>
+            <from>12</from>
+            <to>13</to>
+            <read>e</read>
+        </transition>
+        
+        <!-- Keyword: while -->
+        <transition>
+            <from>0</from>
+            <to>14</to>
+            <read>w</read>
+        </transition>
+        <transition>
+            <from>14</from>
+            <to>15</to>
+            <read>h</read>
+        </transition>
+        <transition>
+            <from>15</from>
+            <to>16</to>
+            <read>i</read>
+        </transition>
+        <transition>
+            <from>16</from>
+            <to>17</to>
+            <read>l</read>
+        </transition>
+        <transition>
+            <from>17</from>
+            <to>18</to>
+            <read>e</read>
+        </transition>
+        
+        <!-- Keyword: return -->
+        <transition>
+            <from>0</from>
+            <to>19</to>
+            <read>r</read>
+        </transition>
+        <transition>
+            <from>19</from>
+            <to>20</to>
+            <read>e</read>
+        </transition>
+        <transition>
+            <from>20</from>
+            <to>21</to>
+            <read>t</read>
+        </transition>
+        <transition>
+            <from>21</from>
+            <to>22</to>
+            <read>u</read>
+        </transition>
+        <transition>
+            <from>22</from>
+            <to>23</to>
+            <read>r</read>
+        </transition>
+        <transition>
+            <from>23</from>
+            <to>24</to>
+            <read>n</read>
+        </transition>
+        
+        <!-- Keyword: final -->
+        <transition>
+            <from>0</from>
+            <to>25</to>
+            <read>f</read>
+        </transition>
+        <transition>
+            <from>25</from>
+            <to>26</to>
+            <read>i</read>
+        </transition>
+        <transition>
+            <from>26</from>
+            <to>27</to>
+            <read>n</read>
+        </transition>
+        <transition>
+            <from>27</from>
+            <to>28</to>
+            <read>a</read>
+        </transition>
+        <transition>
+            <from>28</from>
+            <to>29</to>
+            <read>l</read>
+        </transition>
+        
+        <!-- Keyword: float -->
+        <transition>
+            <from>25</from>
+            <to>30</to>
+            <read>l</read>
+        </transition>
+        <transition>
+            <from>30</from>
+            <to>31</to>
+            <read>o</read>
+        </transition>
+        <transition>
+            <from>31</from>
+            <to>32</to>
+            <read>a</read>
+        </transition>
+        <transition>
+            <from>32</from>
+            <to>33</to>
+            <read>t</read>
+        </transition>
+        
+        <!-- Keyword: false -->
+        <transition>
+            <from>25</from>
+            <to>34</to>
+            <read>a</read>
+        </transition>
+        <transition>
+            <from>34</from>
+            <to>35</to>
+            <read>l</read>
+        </transition>
+        <transition>
+            <from>35</from>
+            <to>36</to>
+            <read>s</read>
+        </transition>
+        <transition>
+            <from>36</from>
+            <to>37</to>
+            <read>e</read>
+        </transition>
+        
+        <!-- Keyword: null -->
+        <transition>
+            <from>0</from>
+            <to>38</to>
+            <read>n</read>
+        </transition>
+        <transition>
+            <from>38</from>
+            <to>39</to>
+            <read>u</read>
+        </transition>
+        <transition>
+            <from>39</from>
+            <to>40</to>
+            <read>l</read>
+        </transition>
+        <transition>
+            <from>40</from>
+            <to>41</to>
+            <read>l</read>
+        </transition>
+        
+        <!-- Keyword: double -->
+        <transition>
+            <from>0</from>
+            <to>42</to>
+            <read>d</read>
+        </transition>
+        <transition>
+            <from>42</from>
+            <to>43</to>
+            <read>o</read>
+        </transition>
+        <transition>
+            <from>43</from>
+            <to>44</to>
+            <read>u</read>
+        </transition>
+        <transition>
+            <from>44</from>
+            <to>45</to>
+            <read>b</read>
+        </transition>
+        <transition>
+            <from>45</from>
+            <to>46</to>
+            <read>l</read>
+        </transition>
+        <transition>
+            <from>46</from>
+            <to>47</to>
+            <read>e</read>
+        </transition>
+        
+        <!-- Keyword: boolean -->
+        <transition>
+            <from>0</from>
+            <to>48</to>
+            <read>b</read>
+        </transition>
+        <transition>
+            <from>48</from>
+            <to>49</to>
+            <read>o</read>
+        </transition>
+        <transition>
+            <from>49</from>
+            <to>50</to>
+            <read>o</read>
+        </transition>
+        <transition>
+            <from>50</from>
+            <to>51</to>
+            <read>l</read>
+        </transition>
+        <transition>
+            <from>51</from>
+            <to>52</to>
+            <read>e</read>
+        </transition>
+        <transition>
+            <from>52</from>
+            <to>53</to>
+            <read>a</read>
+        </transition>
+        <transition>
+            <from>53</from>
+            <to>54</to>
+            <read>n</read>
+        </transition>
+        
+        <!-- Keyword: String -->
+        <transition>
+            <from>0</from>
+            <to>55</to>
+            <read>S</read>
+        </transition>
+        <transition>
+            <from>55</from>
+            <to>56</to>
+            <read>t</read>
+        </transition>
+        <transition>
+            <from>56</from>
+            <to>57</to>
+            <read>r</read>
+        </transition>
+        <transition>
+            <from>57</from>
+            <to>58</to>
+            <read>i</read>
+        </transition>
+        <transition>
+            <from>58</from>
+            <to>59</to>
+            <read>n</read>
+        </transition>
+        <transition>
+            <from>59</from>
+            <to>60</to>
+            <read>g</read>
+        </transition>
+        
+        <!-- Keyword: void -->
+        <transition>
+            <from>0</from>
+            <to>61</to>
+            <read>v</read>
+        </transition>
+        <transition>
+            <from>61</from>
+            <to>62</to>
+            <read>o</read>
+        </transition>
+        <transition>
+            <from>62</from>
+            <to>63</to>
+            <read>i</read>
+        </transition>
+        <transition>
+            <from>63</from>
+            <to>64</to>
+            <read>d</read>
+        </transition>
+        
+        <!-- Keyword: true -->
+        <transition>
+            <from>0</from>
+            <to>65</to>
+            <read>t</read>
+        </transition>
+        <transition>
+            <from>65</from>
+            <to>66</to>
+            <read>r</read>
+        </transition>
+        <transition>
+            <from>66</from>
+            <to>67</to>
+            <read>u</read>
+        </transition>
+        <transition>
+            <from>67</from>
+            <to>68</to>
+            <read>e</read>
+        </transition>
+        
+        <!-- IDENTIFIER: letters -->
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>a</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>g</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>h</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>j</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>k</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>l</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>m</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>o</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>p</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>q</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>s</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>u</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>x</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>y</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>z</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>A</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>B</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>C</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>D</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>E</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>F</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>G</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>H</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>I</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>J</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>K</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>L</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>M</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>N</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>O</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>P</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>Q</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>R</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>T</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>U</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>V</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>W</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>X</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>Y</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>Z</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>100</to>
+            <read>_</read>
+        </transition>
+        
+        <!-- IDENTIFIER self-loops -->
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>a</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>b</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>c</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>d</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>e</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>f</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>g</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>h</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>i</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>j</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>k</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>l</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>m</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>n</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>o</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>p</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>q</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>r</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>s</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>t</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>u</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>v</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>w</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>x</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>y</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>z</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>A</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>B</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>C</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>D</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>E</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>F</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>G</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>H</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>I</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>J</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>K</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>L</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>M</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>N</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>O</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>P</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>Q</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>R</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>S</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>T</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>U</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>V</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>W</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>X</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>Y</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>Z</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>0</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>1</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>2</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>3</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>4</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>5</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>6</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>7</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>8</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>9</read>
+        </transition>
+        <transition>
+            <from>100</from>
+            <to>100</to>
+            <read>_</read>
+        </transition>
+        
+        <!-- INTEGER -->
+        <transition>
+            <from>0</from>
+            <to>110</to>
+            <read>0</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>110</to>
+            <read>1</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>110</to>
+            <read>2</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>110</to>
+            <read>3</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>110</to>
+            <read>4</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>110</to>
+            <read>5</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>110</to>
+            <read>6</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>110</to>
+            <read>7</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>110</to>
+            <read>8</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>110</to>
+            <read>9</read>
+        </transition>
+        
+        <!-- INTEGER self-loops -->
+        <transition>
+            <from>110</from>
+            <to>110</to>
+            <read>0</read>
+        </transition>
+        <transition>
+            <from>110</from>
+            <to>110</to>
+            <read>1</read>
+        </transition>
+        <transition>
+            <from>110</from>
+            <to>110</to>
+            <read>2</read>
+        </transition>
+        <transition>
+            <from>110</from>
+            <to>110</to>
+            <read>3</read>
+        </transition>
+        <transition>
+            <from>110</from>
+            <to>110</to>
+            <read>4</read>
+        </transition>
+        <transition>
+            <from>110</from>
+            <to>110</to>
+            <read>5</read>
+        </transition>
+        <transition>
+            <from>110</from>
+            <to>110</to>
+            <read>6</read>
+        </transition>
+        <transition>
+            <from>110</from>
+            <to>110</to>
+            <read>7</read>
+        </transition>
+        <transition>
+            <from>110</from>
+            <to>110</to>
+            <read>8</read>
+        </transition>
+        <transition>
+            <from>110</from>
+            <to>110</to>
+            <read>9</read>
+        </transition>
+        
+        <!-- FLOAT -->
+        <transition>
+            <from>110</from>
+            <to>120</to>
+            <read>.</read>
+        </transition>
+        <transition>
+            <from>120</from>
+            <to>121</to>
+            <read>0</read>
+        </transition>
+        <transition>
+            <from>120</from>
+            <to>121</to>
+            <read>1</read>
+        </transition>
+        <transition>
+            <from>120</from>
+            <to>121</to>
+            <read>2</read>
+        </transition>
+        <transition>
+            <from>120</from>
+            <to>121</to>
+            <read>3</read>
+        </transition>
+        <transition>
+            <from>120</from>
+            <to>121</to>
+            <read>4</read>
+        </transition>
+        <transition>
+            <from>120</from>
+            <to>121</to>
+            <read>5</read>
+        </transition>
+        <transition>
+            <from>120</from>
+            <to>121</to>
+            <read>6</read>
+        </transition>
+        <transition>
+            <from>120</from>
+            <to>121</to>
+            <read>7</read>
+        </transition>
+        <transition>
+            <from>120</from>
+            <to>121</to>
+            <read>8</read>
+        </transition>
+        <transition>
+            <from>120</from>
+            <to>121</to>
+            <read>9</read>
+        </transition>
+        
+        <!-- FLOAT self-loops -->
+        <transition>
+            <from>121</from>
+            <to>121</to>
+            <read>0</read>
+        </transition>
+        <transition>
+            <from>121</from>
+            <to>121</to>
+            <read>1</read>
+        </transition>
+        <transition>
+            <from>121</from>
+            <to>121</to>
+            <read>2</read>
+        </transition>
+        <transition>
+            <from>121</from>
+            <to>121</to>
+            <read>3</read>
+        </transition>
+        <transition>
+            <from>121</from>
+            <to>121</to>
+            <read>4</read>
+        </transition>
+        <transition>
+            <from>121</from>
+            <to>121</to>
+            <read>5</read>
+        </transition>
+        <transition>
+            <from>121</from>
+            <to>121</to>
+            <read>6</read>
+        </transition>
+        <transition>
+            <from>121</from>
+            <to>121</to>
+            <read>7</read>
+        </transition>
+        <transition>
+            <from>121</from>
+            <to>121</to>
+            <read>8</read>
+        </transition>
+        <transition>
+            <from>121</from>
+            <to>121</to>
+            <read>9</read>
+        </transition>
+        
+        <!-- STRING -->
+        <transition>
+            <from>0</from>
+            <to>130</to>
+            <read>"</read>
+        </transition>
+        <transition>
+            <from>130</from>
+            <to>131</to>
+            <read>a</read>
+        </transition>
+        <transition>
+            <from>130</from>
+            <to>131</to>
+            <read>b</read>
+        </transition>
+        <transition>
+            <from>130</from>
+            <to>131</to>
+            <read>0</read>
+        </transition>
+        <transition>
+            <from>130</from>
+            <to>131</to>
+            <read> </read>
+        </transition>
+        <transition>
+            <from>131</from>
+            <to>131</to>
+            <read>a</read>
+        </transition>
+        <transition>
+            <from>131</from>
+            <to>131</to>
+            <read>b</read>
+        </transition>
+        <transition>
+            <from>131</from>
+            <to>131</to>
+            <read>0</read>
+        </transition>
+        <transition>
+            <from>131</from>
+            <to>131</to>
+            <read> </read>
+        </transition>
+        <transition>
+            <from>130</from>
+            <to>133</to>
+            <read>\</read>
+        </transition>
+        <transition>
+            <from>131</from>
+            <to>133</to>
+            <read>\</read>
+        </transition>
+        <transition>
+            <from>133</from>
+            <to>131</to>
+            <read>n</read>
+        </transition>
+        <transition>
+            <from>133</from>
+            <to>131</to>
+            <read>t</read>
+        </transition>
+        <transition>
+            <from>133</from>
+            <to>131</to>
+            <read>"</read>
+        </transition>
+        <transition>
+            <from>133</from>
+            <to>131</to>
+            <read>\</read>
+        </transition>
+        <transition>
+            <from>130</from>
+            <to>132</to>
+            <read>"</read>
+        </transition>
+        <transition>
+            <from>131</from>
+            <to>132</to>
+            <read>"</read>
+        </transition>
+        
+        <!-- Operators -->
+        <transition>
+            <from>0</from>
+            <to>200</to>
+            <read>+</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>201</to>
+            <read>-</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>202</to>
+            <read>*</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>203</to>
+            <read>/</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>204</to>
+            <read>%</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>205</to>
+            <read>&lt;</read>
+        </transition>
+        <transition>
+            <from>205</from>
+            <to>206</to>
+            <read>=</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>207</to>
+            <read>&gt;</read>
+        </transition>
+        <transition>
+            <from>207</from>
+            <to>208</to>
+            <read>=</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>209</to>
+            <read>=</read>
+        </transition>
+        <transition>
+            <from>209</from>
+            <to>210</to>
+            <read>=</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>211</to>
+            <read>!</read>
+        </transition>
+        <transition>
+            <from>211</from>
+            <to>212</to>
+            <read>=</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>213</to>
+            <read>&amp;</read>
+        </transition>
+        <transition>
+            <from>213</from>
+            <to>214</to>
+            <read>&amp;</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>215</to>
+            <read>|</read>
+        </transition>
+        <transition>
+            <from>215</from>
+            <to>216</to>
+            <read>|</read>
+        </transition>
+        
+        <!-- Delimiters -->
+        <transition>
+            <from>0</from>
+            <to>300</to>
+            <read>(</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>301</to>
+            <read>)</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>302</to>
+            <read>{</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>303</to>
+            <read>}</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>304</to>
+            <read>;</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>305</to>
+            <read>,</read>
+        </transition>
+        <transition>
+            <from>0</from>
+            <to>306</to>
+            <read>.</read>
+        </transition>
+        
+    </automaton>
+</structure>

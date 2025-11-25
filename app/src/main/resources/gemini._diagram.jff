@@ -1,0 +1,756 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<structure>
+	<type>fa</type>
+	<automaton>
+		<state id="0" name="q0">
+			<x>50.0</x>
+			<y>1500.0</y>
+			<initial/>
+		</state>
+		<state id="87" name="q_plus_1">
+			<x>200.0</x>
+			<y>100.0</y>
+		</state>
+		<state id="88" name="FINAL_ADDITIVE_plus">
+			<x>300.0</x>
+			<y>100.0</y>
+			<final/>
+		</state>
+		<state id="89" name="q_minus_1">
+			<x>200.0</x>
+			<y>200.0</y>
+		</state>
+		<state id="90" name="FINAL_ADDITIVE_minus">
+			<x>300.0</x>
+			<y>200.0</y>
+			<final/>
+		</state>
+		<state id="91" name="q_mult_1">
+			<x>200.0</x>
+			<y>300.0</y>
+		</state>
+		<state id="92" name="FINAL_MULTIPLICATIVE_mult">
+			<x>300.0</x>
+			<y>300.0</y>
+			<final/>
+		</state>
+		<state id="93" name="q_div_1">
+			<x>200.0</x>
+			<y>400.0</y>
+		</state>
+		<state id="94" name="FINAL_MULTIPLICATIVE_div">
+			<x>300.0</x>
+			<y>400.0</y>
+			<final/>
+		</state>
+		<state id="95" name="q_mod_1">
+			<x>200.0</x>
+			<y>500.0</y>
+		</state>
+		<state id="96" name="FINAL_MULTIPLICATIVE_mod">
+			<x>300.0</x>
+			<y>500.0</y>
+			<final/>
+		</state>
+		<state id="97" name="q_lt_1">
+			<x>200.0</x>
+			<y>600.0</y>
+		</state>
+		<state id="98" name="FINAL_RELATIONAL_lt">
+			<x>300.0</x>
+			<y>600.0</y>
+			<final/>
+		</state>
+		<state id="99" name="q_le_1">
+			<x>200.0</x>
+			<y>700.0</y>
+		</state>
+		<state id="100" name="q_le_2">
+			<x>300.0</x>
+			<y>700.0</y>
+		</state>
+		<state id="101" name="FINAL_RELATIONAL_le">
+			<x>400.0</x>
+			<y>700.0</y>
+			<final/>
+		</state>
+		<state id="102" name="q_gt_1">
+			<x>200.0</x>
+			<y>800.0</y>
+		</state>
+		<state id="103" name="FINAL_RELATIONAL_gt">
+			<x>300.0</x>
+			<y>800.0</y>
+			<final/>
+		</state>
+		<state id="104" name="q_ge_1">
+			<x>200.0</x>
+			<y>900.0</y>
+		</state>
+		<state id="105" name="q_ge_2">
+			<x>300.0</x>
+			<y>900.0</y>
+		</state>
+		<state id="106" name="FINAL_RELATIONAL_ge">
+			<x>400.0</x>
+			<y>900.0</y>
+			<final/>
+		</state>
+		<state id="107" name="q_eq_1">
+			<x>200.0</x>
+			<y>1000.0</y>
+		</state>
+		<state id="108" name="q_eq_2">
+			<x>300.0</x>
+			<y>1000.0</y>
+		</state>
+		<state id="109" name="FINAL_RELATIONAL_eq">
+			<x>400.0</x>
+			<y>1000.0</y>
+			<final/>
+		</state>
+		<state id="110" name="q_ne_1">
+			<x>200.0</x>
+			<y>1100.0</y>
+		</state>
+		<state id="111" name="q_ne_2">
+			<x>300.0</x>
+			<y>1100.0</y>
+		</state>
+		<state id="112" name="FINAL_RELATIONAL_ne">
+			<x>400.0</x>
+			<y>1100.0</y>
+			<final/>
+		</state>
+		<state id="113" name="q_and_1">
+			<x>200.0</x>
+			<y>1200.0</y>
+		</state>
+		<state id="114" name="q_and_2">
+			<x>300.0</x>
+			<y>1200.0</y>
+		</state>
+		<state id="115" name="FINAL_LOGICAL_and">
+			<x>400.0</x>
+			<y>1200.0</y>
+			<final/>
+		</state>
+		<state id="116" name="q_or_1">
+			<x>200.0</x>
+			<y>1300.0</y>
+		</state>
+		<state id="117" name="q_or_2">
+			<x>300.0</x>
+			<y>1300.0</y>
+		</state>
+		<state id="118" name="FINAL_LOGICAL_or">
+			<x>400.0</x>
+			<y>1300.0</y>
+			<final/>
+		</state>
+		<state id="119" name="q_not_1">
+			<x>200.0</x>
+			<y>1400.0</y>
+		</state>
+		<state id="120" name="FINAL_NOT">
+			<x>300.0</x>
+			<y>1400.0</y>
+			<final/>
+		</state>
+		<state id="121" name="q_assign_1">
+			<x>200.0</x>
+			<y>1500.0</y>
+		</state>
+		<state id="122" name="FINAL_ASSIGN">
+			<x>300.0</x>
+			<y>1500.0</y>
+			<final/>
+		</state>
+		<state id="123" name="q_lparen_1">
+			<x>200.0</x>
+			<y>1600.0</y>
+		</state>
+		<state id="124" name="FINAL_LPAREN">
+			<x>300.0</x>
+			<y>1600.0</y>
+			<final/>
+		</state>
+		<state id="125" name="q_rparen_1">
+			<x>200.0</x>
+			<y>1700.0</y>
+		</state>
+		<state id="126" name="FINAL_RPAREN">
+			<x>300.0</x>
+			<y>1700.0</y>
+			<final/>
+		</state>
+		<state id="127" name="q_lbrace_1">
+			<x>200.0</x>
+			<y>1800.0</y>
+		</state>
+		<state id="128" name="FINAL_LBRACE">
+			<x>300.0</x>
+			<y>1800.0</y>
+			<final/>
+		</state>
+		<state id="129" name="q_rbrace_1">
+			<x>200.0</x>
+			<y>1900.0</y>
+		</state>
+		<state id="130" name="FINAL_RBRACE">
+			<x>300.0</x>
+			<y>1900.0</y>
+			<final/>
+		</state>
+		<state id="131" name="q_semi_1">
+			<x>200.0</x>
+			<y>2000.0</y>
+		</state>
+		<state id="132" name="FINAL_SEMI">
+			<x>300.0</x>
+			<y>2000.0</y>
+			<final/>
+		</state>
+		<state id="133" name="q_comma_1">
+			<x>200.0</x>
+			<y>2100.0</y>
+		</state>
+		<state id="134" name="FINAL_COMMA">
+			<x>300.0</x>
+			<y>2100.0</y>
+			<final/>
+		</state>
+		<state id="135" name="q_dot_1">
+			<x>200.0</x>
+			<y>2200.0</y>
+		</state>
+		<state id="136" name="FINAL_DOT">
+			<x>300.0</x>
+			<y>2200.0</y>
+			<final/>
+		</state>
+		<state id="137" name="q_id_start">
+			<x>200.0</x>
+			<y>2300.0</y>
+		</state>
+		<state id="138" name="FINAL_IDENTIFIER">
+			<x>300.0</x>
+			<y>2300.0</y>
+			<final/>
+		</state>
+		<state id="139" name="q_int_start">
+			<x>200.0</x>
+			<y>2400.0</y>
+		</state>
+		<state id="140" name="FINAL_INTEGER">
+			<x>300.0</x>
+			<y>2400.0</y>
+			<final/>
+		</state>
+		<state id="141" name="q_float_start">
+			<x>200.0</x>
+			<y>2500.0</y>
+		</state>
+		<state id="142" name="q_float_int_loop">
+			<x>300.0</x>
+			<y>2500.0</y>
+		</state>
+		<state id="143" name="q_float_dot">
+			<x>400.0</x>
+			<y>2500.0</y>
+		</state>
+		<state id="144" name="FINAL_FLOAT">
+			<x>500.0</x>
+			<y>2500.0</y>
+			<final/>
+		</state>
+		<state id="145" name="q_str_start">
+			<x>200.0</x>
+			<y>2600.0</y>
+		</state>
+		<state id="146" name="q_str_content">
+			<x>300.0</x>
+			<y>2600.0</y>
+		</state>
+		<state id="147" name="FINAL_STRING">
+			<x>400.0</x>
+			<y>2600.0</y>
+			<final/>
+		</state>
+		<state id="148" name="q_ws_start">
+			<x>200.0</x>
+			<y>2700.0</y>
+		</state>
+		<state id="149" name="FINAL_WS">
+			<x>300.0</x>
+			<y>2700.0</y>
+			<final/>
+		</state>
+		<state id="150" name="q_line_comment_start">
+			<x>200.0</x>
+			<y>2800.0</y>
+		</state>
+		<state id="151" name="q_line_comment_s1">
+			<x>300.0</x>
+			<y>2800.0</y>
+		</state>
+		<state id="1Section2" name="q_line_comment_s2">
+			<x>400.0</x>
+			<y>2800.0</y>
+		</state>
+		<state id="153" name="q_line_comment_content">
+			<x>500.0</x>
+			<y>2800.0</y>
+		</state>
+		<state id="154" name="FINAL_LINE_COMMENT">
+			<x>600.0</x>
+			<y>2800.0</y>
+			<final/>
+		</state>
+		<state id="155" name="q_block_comment_start">
+			<x>200.0</x>
+			<y>2900.0</y>
+		</state>
+		<state id="156" name="q_block_comment_s1">
+			<x>300.0</x>
+			<y>2900.0</y>
+		</state>
+		<state id="157" name="q_block_comment_s2">
+			<x>400.0</x>
+			<y>2900.0</y>
+		</state>
+		<state id="158" name="q_block_comment_content">
+			<x>500.0</x>
+			<y>2900.0</y>
+		</state>
+		<state id="159" name="q_block_comment_star">
+			<x>600.0</x>
+			<y>2900.0</y>
+		</state>
+		<state id="160" name="FINAL_BLOCK_COMMENT">
+			<x>700.0</x>
+			<y>2900.0</y>
+			<final/>
+		</state>
+		<transition>
+			<from>0</from>
+			<to>87</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>89</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>91</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>93</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>95</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>97</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>99</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>102</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>104</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>107</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>110</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>113</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>116</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>119</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>121</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>123</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>125</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>127</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>129</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>131</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>133</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>135</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>137</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>139</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>141</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>145</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>148</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>150</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>0</from>
+			<to>155</to>
+			<read/>
+		</transition>
+		<transition>
+			<from>87</from>
+			<to>88</to>
+			<read>+</read>
+		</transition>
+		<transition>
+			<from>89</from>
+			<to>90</to>
+			<read>-</read>
+		</transition>
+		<transition>
+			<from>91</from>
+			<to>92</to>
+			<read>*</read>
+		</transition>
+		<transition>
+			<from>93</from>
+			<to>94</to>
+			<read>/</read>
+		</transition>
+		<transition>
+			<from>95</from>
+			<to>96</to>
+			<read>%</read>
+		</transition>
+		<transition>
+			<from>97</from>
+			<to>98</to>
+			<read>&lt;</read>
+		</transition>
+		<transition>
+			<from>99</from>
+			<to>100</to>
+			<read>&lt;</read>
+		</transition>
+		<transition>
+			<from>100</from>
+			<to>101</to>
+			<read>=</read>
+		</transition>
+		<transition>
+			<from>102</from>
+			<to>103</to>
+			<read>&gt;</read>
+		</transition>
+		<transition>
+			<from>104</from>
+			<to>105</to>
+			<read>&gt;</read>
+		</transition>
+		<transition>
+			<from>105</from>
+			<to>106</to>
+			<read>=</read>
+		</transition>
+		<transition>
+			<from>107</from>
+			<to>108</to>
+			<read>=</read>
+		</transition>
+		<transition>
+			<from>108</from>
+			<to>109</to>
+			<read>=</read>
+		</transition>
+		<transition>
+			<from>110</from>
+			<to>111</to>
+			<read>!</read>
+		</transition>
+		<transition>
+			<from>111</from>
+			<to>112</to>
+			<read>=</read>
+		</transition>
+		<transition>
+			<from>113</from>
+			<to>114</to>
+			<read>&amp;</read>
+		</transition>
+		<transition>
+			<from>114</from>
+			<to>115</to>
+			<read>&amp;</read>
+		</transition>
+		<transition>
+			<from>116</from>
+			<to>117</to>
+			<read>|</read>
+		</transition>
+		<transition>
+			<from>117</from>
+			<to>118</to>
+			<read>|</read>
+		</transition>
+		<transition>
+			<from>119</from>
+			<to>120</to>
+			<read>!</read>
+		</transition>
+		<transition>
+			<from>121</from>
+			<to>122</to>
+			<read>=</read>
+		</transition>
+		<transition>
+			<from>123</from>
+			<to>124</to>
+			<read>(</read>
+		</transition>
+		<transition>
+			<from>125</from>
+			<to>126</to>
+			<read>)</read>
+		</transition>
+		<transition>
+			<from>127</from>
+			<to>128</to>
+			<read>{</read>
+		</transition>
+		<transition>
+			<from>129</from>
+			<to>130</to>
+			<read>}</read>
+		</transition>
+		<transition>
+			<from>131</from>
+			<to>132</to>
+			<read>;</read>
+		</transition>
+		<transition>
+			<from>133</from>
+			<to>134</to>
+			<read>,</read>
+		</transition>
+		<transition>
+			<from>135</from>
+			<to>136</to>
+			<read>.</read>
+		</transition>
+		<transition>
+			<from>137</from>
+			<to>138</to>
+			<read>LetterOr_</read>
+		</transition>
+		<transition>
+			<from>138</from>
+			<to>138</to>
+			<read>LetterDigitOr_</read>
+		</transition>
+		<transition>
+			<from>139</from>
+			<to>140</to>
+			<read>Digit</read>
+		</transition>
+		<transition>
+			<from>140</from>
+			<to>140</to>
+			<read>Digit</read>
+		</transition>
+		<transition>
+			<from>141</from>
+			<to>142</to>
+			<read>Digit</read>
+		</transition>
+		<transition>
+			<from>142</from>
+			<to>142</to>
+			<read>Digit</read>
+		</transition>
+		<transition>
+			<from>142</from>
+			<to>143</to>
+			<read>.</read>
+		</transition>
+		<transition>
+			<from>143</from>
+			<to>144</to>
+			<read>Digit</read>
+		</transition>
+		<transition>
+			<from>144</from>
+			<to>144</to>
+			<read>Digit</read>
+		</transition>
+		<transition>
+			<from>145</from>
+			<to>146</to>
+			<read>"</read>
+		</transition>
+		<transition>
+			<from>146</from>
+			<to>146</to>
+			<read>AnyCharNotQuote</read>
+		</transition>
+		<transition>
+			<from>146</from>
+			<to>147</to>
+			<read>"</read>
+		</transition>
+		<transition>
+			<from>148</from>
+			<to>149</to>
+			<read>Whitespace</read>
+		</transition>
+		<transition>
+			<from>149</from>
+			<to>149</to>
+			<read>Whitespace</read>
+		</transition>
+		<transition>
+			<from>150</from>
+			<to>151</to>
+			<read>/</read>
+		</transition>
+		<transition>
+			<from>151</from>
+			<to>152</to>
+			<read>/</read>
+		</transition>
+		<transition>
+			<from>152</from>
+			<to>153</to>
+			<read>AnyCharNotNewline</read>
+		</transition>
+		<transition>
+			<from>153</from>
+			<to>153</to>
+			<read>AnyCharNotNewline</read>
+		</transition>
+		<transition>
+			<from>153</from>
+			<to>154</to>
+			<read>Newline</read>
+		</transition>
+		<transition>
+			<from>155</from>
+			<to>156</to>
+			<read>/</read>
+		</transition>
+		<transition>
+			<from>156</from>
+			<to>157</to>
+			<read>*</read>
+		</transition>
+		<transition>
+			<from>157</from>
+			<to>158</to>
+			<read>AnyCharNotStar</read>
+		</transition>
+		<transition>
+			<from>158</from>
+			<to>158</to>
+			<read>AnyCharNotStar</read>
+		</transition>
+		<transition>
+			<from>158</from>
+			<to>159</to>
+			<read>*</read>
+		</transition>
+		<transition>
+			<from>159</from>
+			<to>158</to>
+			<read>AnyCharNotStarOrSlash</read>
+		</transition>
+		<transition>
+			<from>159</from>
+			<to>159</to>
+			<read>*</read>
+		</transition>
+		<transition>
+			<from>159</from>
+			<to>160</to>
+			<read>/</read>
+		</transition>
+	</automaton>
+</structure>
