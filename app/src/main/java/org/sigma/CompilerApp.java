@@ -4,50 +4,40 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.Vocabulary;
 import org.sigma.lexer.SigmaLexerWrapper;
-import org.sigma.runner.SigmaRunner;
-import org.sigma.syntax.parser.RecursiveDescentParser;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 public class CompilerApp {
-//    private static final String SAMPLE_CODE = """
-//                int x = 10;
-//                println("Hello, Sigma!");
-//                int y = x + 10;
-//                println(y);
-//                """;
 
-    public static void main(String[] args) {
-        try {
-            Path p = args.length > 0 ? Path.of(args[0]) : Path.of(System.getProperty("user.dir"), "syntax_error_tests.sigma");
-            if (!Files.exists(p)) {
-                System.err.println("Demo file not found: " + p.toAbsolutePath());
-                System.exit(2);
-            }
-            String src = Files.readString(p);
-
-            SigmaLexerWrapper wrapper = new SigmaLexerWrapper();
-            CommonTokenStream tokens = wrapper.createLexerTable(src);
-            Vocabulary vocab = wrapper.getVocabulary();
-
-            List<Token> tokenList = tokens.getTokens();
-            System.out.println("Token dump for: " + p.toAbsolutePath());
-            for (Token t : tokenList) {
-                String typeName = t.getType() == Token.EOF ? "<EOF>" : vocab.getSymbolicName(t.getType());
-                System.out.printf("%s\t%s\t(line:%d col:%d)\n", typeName, t.getText(), t.getLine(), t.getCharPositionInLine());
-            }
-        } catch (Exception e) {
-            System.err.println("LexerDemo failed: " + e.getMessage());
-            e.printStackTrace(System.err);
-            System.exit(1);
+    public static void main(String[] args) throws IOException {
+        Path p = args.length > 0 ? Path.of(args[0]) : Path.of("app/src/main/resources", "source.scala");
+        if (!Files.exists(p)) {
+            System.err.println("Demo file not found: " + p.toAbsolutePath());
+            System.exit(2);
         }
+        String src = Files.readString(p);
+
+        List<Token> list_token = run_lexer(src, p);
     }
+
+    private static List<Token> run_lexer(String src, Path p) {
+        SigmaLexerWrapper wrapper = new SigmaLexerWrapper();
+        CommonTokenStream tokens = wrapper.createLexerTable(src);
+        Vocabulary vocab = wrapper.getVocabulary();
+
+        List<Token> tokenList = tokens.getTokens();
+        System.out.println("Token dump for: " + p.toAbsolutePath());
+        for (Token t : tokenList) {
+            String typeName = t.getType() == Token.EOF ? "<EOF>" : vocab.getSymbolicName(t.getType());
+            System.out.printf("%s\t%s\t(line:%d col:%d)\n", typeName, t.getText(), t.getLine(), t.getCharPositionInLine());
+        }
+
+        return tokenList;
     }
+}
 //
 //    public static void main(String[] args) {
 //        SigmaCompiler compiler = new SigmaCompiler();

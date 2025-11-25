@@ -61,7 +61,7 @@ tasks.named('compileJava') {
 
 application {
     // Define the main class for the application.
-    mainClass = 'org.example.CompilerApp'
+    mainClass = 'org.sigma.CompilerApp'
 }
 
 // Simple JavaExec task to run a small RD regression runner (does not depend on test sources)
