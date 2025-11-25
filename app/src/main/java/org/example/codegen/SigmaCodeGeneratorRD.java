@@ -1,8 +1,8 @@
 package org.example.codegen;
 
 import org.example.ast.Ast;
-import org.example.semantic.SymbolTable;
-import org.example.semantic.SigmaType;
+import org.example.syntax.semantic.SymbolTable;
+import org.example.syntax.semantic.SigmaType;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -22,7 +22,7 @@ public class SigmaCodeGeneratorRD {
     private GeneratorAdapter mv;
 
     private final Map<String,Integer> slots = new HashMap<>();
-    private final Map<String, org.example.semantic.SigmaType> slotTypes = new HashMap<>();
+    private final Map<String, SigmaType> slotTypes = new HashMap<>();
 
     public SigmaCodeGeneratorRD(SymbolTable st, String className) {
         this.symbolTable = st;
@@ -55,13 +55,13 @@ public class SigmaCodeGeneratorRD {
         if (s instanceof Ast.VariableDeclaration) {
             Ast.VariableDeclaration vd = (Ast.VariableDeclaration)s;
             // choose local type based on declared type name
-            org.example.semantic.SigmaType declared = org.example.semantic.SigmaType.INT;
+            SigmaType declared = SigmaType.INT;
             Type localType = Type.INT_TYPE;
             if (vd.typeName != null) {
                 String tn = vd.typeName;
-                if (tn.equals("double") || tn.equals("float")) { declared = org.example.semantic.SigmaType.DOUBLE; localType = Type.DOUBLE_TYPE; }
-                else if (tn.equals("String")) { declared = org.example.semantic.SigmaType.STRING; localType = Type.getType(String.class); }
-                else if (tn.equals("boolean")) { declared = org.example.semantic.SigmaType.BOOLEAN; localType = Type.BOOLEAN_TYPE; }
+                if (tn.equals("double") || tn.equals("float")) { declared = SigmaType.DOUBLE; localType = Type.DOUBLE_TYPE; }
+                else if (tn.equals("String")) { declared = SigmaType.STRING; localType = Type.getType(String.class); }
+                else if (tn.equals("boolean")) { declared = SigmaType.BOOLEAN; localType = Type.BOOLEAN_TYPE; }
             }
             int slot = mv.newLocal(localType);
             slots.put(vd.name, slot);
@@ -126,12 +126,12 @@ public class SigmaCodeGeneratorRD {
         } else if (s instanceof Ast.Assignment) {
             Ast.Assignment a = (Ast.Assignment)s;
             Integer slot = slots.get(a.name);
-            org.example.semantic.SigmaType declared = slotTypes.getOrDefault(a.name, org.example.semantic.SigmaType.INT);
+            SigmaType declared = slotTypes.getOrDefault(a.name, SigmaType.INT);
             if (slot == null) {
                 // implicit local - create one as int
                 int newSlot = mv.newLocal(Type.INT_TYPE);
                 slots.put(a.name, newSlot);
-                slotTypes.put(a.name, org.example.semantic.SigmaType.INT);
+                slotTypes.put(a.name, SigmaType.INT);
                 slot = newSlot;
             }
             SigmaType t = emitExpression(a.value);

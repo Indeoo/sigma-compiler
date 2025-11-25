@@ -1,7 +1,6 @@
-package org.example.parser;
+package org.example.syntax.parser;
 
 import org.example.ast.Ast;
-import org.example.ast.Ast.*;
 
 import java.util.*;
 

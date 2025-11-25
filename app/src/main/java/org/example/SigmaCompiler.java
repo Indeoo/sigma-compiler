@@ -1,11 +1,11 @@
 package org.example;
 
 import org.example.codegen.SigmaCodeGeneratorRD;
-import org.example.lexer.*;
-import org.example.parser.RecursiveDescentParser;
-import org.example.semantic.RDSemanticAnalyzer;
+import org.example.syntax.parser.RecursiveDescentParser;
+import org.example.syntax.semantic.RDSemanticAnalyzer;
 import org.example.semantic.*;
-import org.example.ast.Ast;
+import org.example.syntax.parser.ParseResult;
+import org.example.syntax.semantic.SemanticResult;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -55,7 +55,7 @@ public class SigmaCompiler {
                 }
                 if (!real.isEmpty()) {
                     // wrap parse errors into ParseResult and return failure
-                    org.example.parser.ParseResult pr = org.example.parser.ParseResult.failure(real);
+                    ParseResult pr = ParseResult.failure(real);
                     return CompilationResult.parseFailure(pr);
                 } else {
                     // only hints/warnings; print them to stderr and continue

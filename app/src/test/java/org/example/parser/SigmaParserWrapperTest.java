@@ -3,14 +3,14 @@ package org.example.parser;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.example.lexer.SigmaLexerWrapper;
+import org.example.syntax.parser.ParseResult;
+import org.example.syntax.parser.SigmaParserWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.example.parser.SigmaParser;
-import static org.example.parser.SigmaParser.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

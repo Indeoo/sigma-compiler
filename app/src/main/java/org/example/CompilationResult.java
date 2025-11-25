@@ -1,7 +1,7 @@
 package org.example;
 
-import org.example.parser.ParseResult;
-import org.example.semantic.SemanticResult;
+import org.example.syntax.parser.ParseResult;
+import org.example.syntax.semantic.SemanticResult;
 
 import java.util.ArrayList;
 import java.util.List;

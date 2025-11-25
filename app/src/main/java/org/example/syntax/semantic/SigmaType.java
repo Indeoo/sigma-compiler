@@ -1,4 +1,4 @@
-package org.example.semantic;
+package org.example.syntax.semantic;
 
 /**
  * Represents types in the Sigma language

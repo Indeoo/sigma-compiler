@@ -1,4 +1,4 @@
-package org.example.parser;
+package org.example.syntax.parser;
 
 import java.util.ArrayList;
 import java.util.List;

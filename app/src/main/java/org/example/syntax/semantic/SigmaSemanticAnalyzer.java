@@ -1,4 +1,4 @@
-package org.example.semantic;
+package org.example.syntax.semantic;
 
 /**
  * Old ANTLR-based semantic analyzer has been removed. Use {@link RDSemanticAnalyzer} for RD AST semantic checks.

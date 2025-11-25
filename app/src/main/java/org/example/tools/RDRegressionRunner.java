@@ -1,6 +1,6 @@
 package org.example.tools;
 
-import org.example.parser.RecursiveDescentParser;
+import org.example.syntax.parser.RecursiveDescentParser;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

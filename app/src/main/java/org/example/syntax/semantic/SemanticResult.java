@@ -1,4 +1,4 @@
-package org.example.semantic;
+package org.example.syntax.semantic;
 
 import java.util.ArrayList;
 import java.util.List;

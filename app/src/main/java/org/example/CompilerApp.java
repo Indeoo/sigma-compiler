@@ -1,6 +1,7 @@
 package org.example;
 
 import org.example.runner.SigmaRunner;
+import org.example.syntax.parser.RecursiveDescentParser;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -27,7 +28,7 @@ public class CompilerApp {
             String filename = args[1];
             try {
                 String src = Files.readString(Paths.get(filename));
-                java.util.List<String> errs = org.example.parser.RecursiveDescentParser.parseAndCollectErrors(src);
+                java.util.List<String> errs = RecursiveDescentParser.parseAndCollectErrors(src);
                 if (errs.isEmpty()) {
                     System.out.println("No syntax errors (recursive-descent check)");
                 } else {
@@ -47,7 +48,7 @@ public class CompilerApp {
             String filename = args[1];
             try {
                 String src = Files.readString(Paths.get(filename));
-                java.util.List<String> toks = org.example.parser.RecursiveDescentParser.dumpTokens(src);
+                java.util.List<String> toks = RecursiveDescentParser.dumpTokens(src);
                 System.out.println("Token dump for: " + filename);
                 for (String t : toks) System.out.println(t);
             } catch (Exception e) {

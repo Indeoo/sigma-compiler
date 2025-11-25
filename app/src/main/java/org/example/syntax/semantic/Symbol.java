@@ -1,4 +1,4 @@
-package org.example.semantic;
+package org.example.syntax.semantic;
 
 /**
  * Represents a symbol in the symbol table (variable, method, class, etc.)

@@ -1,7 +1,4 @@
-package org.example.parser;
-
-import org.example.parser.RecursiveDescentParser;
-import org.example.ast.Ast;
+package org.example.syntax.parser;
 
 import java.io.IOException;
 import java.nio.file.Files;

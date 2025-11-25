@@ -1,5 +1,6 @@
 package org.example.parser;
 
+import org.example.syntax.parser.RecursiveDescentParser;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
