@@ -239,17 +239,6 @@ public class Lexer {
 
     // ---- Demo ----
     public static void main(String[] args) {
-//        String code = String.join("\n",
-//                "var a1 = 123;",
-//                "var b = 45.67;",
-//                "var s = \"hi\\nthere\";",
-//                "if (a1 <= b && b != 0) {",
-//                "  // line comment",
-//                "  /* block",
-//                "     comment */",
-//                "  a1 = a1 + 1;",
-//                "}"
-//        );
         String code = """
             inst count = 4s2;
             float price = 19.99;s
