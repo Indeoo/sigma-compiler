@@ -20,16 +20,15 @@ public class CompilerApp {
         }
         String src = Files.readString(p);
 
-        List<Token> list_token = run_lexer(src, p);
+        List<Token> list_token = run_lexer(src);
     }
 
-    private static List<Token> run_lexer(String src, Path p) {
+    private static List<Token> run_lexer(String src) {
         SigmaLexerWrapper wrapper = new SigmaLexerWrapper();
         CommonTokenStream tokens = wrapper.createLexerTable(src);
         Vocabulary vocab = wrapper.getVocabulary();
 
         List<Token> tokenList = tokens.getTokens();
-        System.out.println("Token dump for: " + p.toAbsolutePath());
         for (Token t : tokenList) {
             String typeName = t.getType() == Token.EOF ? "<EOF>" : vocab.getSymbolicName(t.getType());
             System.out.printf("%s\t%s\t(line:%d col:%d)\n", typeName, t.getText(), t.getLine(), t.getCharPositionInLine());
