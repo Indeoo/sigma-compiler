@@ -103,3 +103,10 @@ task runTestParser(type: JavaExec) {
     mainClass = 'org.sigma.TestParser'
     classpath = sourceSets.main.runtimeClasspath
 }
+
+task runAstPrinter(type: JavaExec) {
+    group = 'verification'
+    description = 'Print readable AST for test cases'
+    mainClass = 'org.sigma.TestAstPrinter'
+    classpath = sourceSets.main.runtimeClasspath
+}
