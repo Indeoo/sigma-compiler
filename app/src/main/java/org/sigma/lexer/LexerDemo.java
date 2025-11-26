@@ -1,17 +1,13 @@
 package org.sigma.lexer;
 
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.Vocabulary;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Simple lexer demo that uses the ANTLR-generated SigmaLexer (via SigmaLexerWrapper)
+ * Simple lexer demo that uses the custom SigmaLexer (via SigmaLexerWrapper)
  * to dump tokens for a provided source file. Usage:
- *   java org.example.lexer.LexerDemo [path/to/file]
+ *   java org.sigma.lexer.LexerDemo [path/to/file]
  * If no path is provided, defaults to the repository root file
  * "syntax_error_tests.sigma".
  */
@@ -26,14 +22,12 @@ public class LexerDemo {
             String src = Files.readString(p);
 
             SigmaLexerWrapper wrapper = new SigmaLexerWrapper();
-            CommonTokenStream tokens = wrapper.createLexerTable(src);
-            Vocabulary vocab = wrapper.getVocabulary();
+            List<SigmaToken> tokens = wrapper.tokenize(src);
 
-            List<Token> tokenList = tokens.getTokens();
             System.out.println("Token dump for: " + p.toAbsolutePath());
-            for (Token t : tokenList) {
-                String typeName = t.getType() == Token.EOF ? "<EOF>" : vocab.getSymbolicName(t.getType());
-                System.out.printf("%s\t%s\t(line:%d col:%d)\n", typeName, t.getText(), t.getLine(), t.getCharPositionInLine());
+            for (SigmaToken t : tokens) {
+                System.out.printf("%s\t%s\t(line:%d col:%d)\n",
+                        t.getType().name(), t.getText(), t.getLine(), t.getCharPositionInLine());
             }
         } catch (Exception e) {
             System.err.println("LexerDemo failed: " + e.getMessage());
