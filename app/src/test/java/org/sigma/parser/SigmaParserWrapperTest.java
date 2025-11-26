@@ -313,16 +313,6 @@ public class SigmaParserWrapperTest {
     }
 
     @Test
-    void testParseFile() {
-        // This would require creating actual test files
-        // For now, just test that the method exists and handles file not found
-        ParseResult result = parser.parseFile("nonexistent.sigma");
-        assertFalse(result.isSuccessful());
-        assertTrue(result.hasErrors());
-        assertTrue(result.getErrorsAsString().contains("File error"));
-    }
-
-    @Test
     void testBooleanLiterals() {
         String code = """
             boolean t = true;

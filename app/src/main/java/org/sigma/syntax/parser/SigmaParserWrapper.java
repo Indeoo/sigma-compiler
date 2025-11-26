@@ -33,15 +33,6 @@ public class SigmaParserWrapper {
         return parse(tokens);
     }
 
-    public ParseResult parseFile(String filename) {
-        try {
-            String src = Files.readString(Paths.get(filename));
-            return parse(src);
-        } catch (IOException e) {
-            return ParseResult.failure(java.util.List.of("File error: " + e.getMessage()));
-        }
-    }
-
     public ParseResult parseOrThrow(String sourceCode) {
         ParseResult r = parse(sourceCode);
         if (!r.isSuccessful()) throw new RuntimeException("Parse failed: " + r.getErrorsAsString());
