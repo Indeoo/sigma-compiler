@@ -1,13 +1,11 @@
 package org.sigma.syntax.parser;
 
 import org.antlr.v4.runtime.Token;
-import org.sigma.ast.Ast;
 import org.example.parser.SigmaBaseVisitor;
 import org.example.parser.SigmaParser;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Converts ANTLR's ParseTree to our custom AST.
@@ -272,10 +270,8 @@ public class AntlrToAstConverter extends SigmaBaseVisitor<Object> {
             if (opCtx.argumentList() != null) {
                 // Method call: expr(args)
                 List<Ast.Expression> args = new ArrayList<>();
-                if (opCtx.argumentList() != null) {
-                    for (SigmaParser.ExpressionContext argCtx : opCtx.argumentList().expression()) {
-                        args.add((Ast.Expression) visit(argCtx));
-                    }
+                for (SigmaParser.ExpressionContext argCtx : opCtx.argumentList().expression()) {
+                    args.add((Ast.Expression) visit(argCtx));
                 }
                 Token lparen = opCtx.LPAREN().getSymbol();
                 expr = new Ast.Call(expr, args, lparen.getLine(), lparen.getCharPositionInLine());

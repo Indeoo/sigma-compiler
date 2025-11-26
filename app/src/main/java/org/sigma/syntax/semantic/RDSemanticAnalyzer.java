@@ -1,6 +1,6 @@
 package org.sigma.syntax.semantic;
 
-import org.sigma.ast.Ast;
+import org.sigma.syntax.parser.Ast;
 
 import java.util.ArrayList;
 import java.util.List;

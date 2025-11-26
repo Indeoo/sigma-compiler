@@ -1,7 +1,5 @@
 package org.sigma.syntax.parser;
 
-import org.sigma.ast.Ast;
-
 import java.util.ArrayList;
 import java.util.List;
 

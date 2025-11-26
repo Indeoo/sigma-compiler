@@ -1,5 +1,6 @@
 package org.sigma.parser;
 
+import org.sigma.syntax.parser.ParseResult;
 import org.sigma.syntax.parser.RecursiveDescentParser;
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +18,8 @@ public class RecursiveDescentRDTest {
         Path p = Path.of("syntax_error_tests.sigma");
         assertTrue(Files.exists(p), "test input file must exist at project root: syntax_error_tests.sigma");
         String src = Files.readString(p);
-        List<String> errs = RecursiveDescentParser.parseAndCollectErrors(src);
+        ParseResult result = RecursiveDescentParser.parseToAst(src);
+        List<String> errs = result.getErrors();
 
         // Basic sanity checks: some important diagnostics should be present
         boolean hasLine6 = errs.stream().anyMatch(s -> s.contains("Line 6:") && s.toLowerCase().contains("did you mean") );
