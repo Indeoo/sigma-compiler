@@ -107,8 +107,7 @@ public class SigmaLexerWrapper {
                 advance();
                 return new SigmaToken(TokenType.MINUS, "-", startLine, startCol);
             case '*':
-                advance();
-                return new SigmaToken(TokenType.MULT, "*", startLine, startCol);
+                return handleMultOrPower();
             case '%':
                 advance();
                 return new SigmaToken(TokenType.MOD, "%", startLine, startCol);
@@ -363,6 +362,20 @@ public class SigmaLexerWrapper {
 
         // Single '|' - create token, let parser handle error
         return new SigmaToken(TokenType.PIPE, "|", startLine, startCol);
+    }
+
+    private SigmaToken handleMultOrPower() {
+        int startLine = line;
+        int startCol = column;
+
+        advance(); // consume '*'
+
+        if (!isAtEnd() && peek() == '*') {
+            advance(); // consume second '*'
+            return new SigmaToken(TokenType.POWER, "**", startLine, startCol);
+        }
+
+        return new SigmaToken(TokenType.MULT, "*", startLine, startCol);
     }
 
     // ========== Whitespace Handling ==========

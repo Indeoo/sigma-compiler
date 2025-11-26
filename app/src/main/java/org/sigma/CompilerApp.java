@@ -22,7 +22,7 @@ public class CompilerApp {
 
         List<SigmaToken> list_token = run_lexer(src);
 
-        ParseResult parseResult = new SigmaParserWrapper().parse(src);
+        ParseResult parseResult = new SigmaParserWrapper().parse(list_token);
 
         System.out.println(parseResult);
     }
