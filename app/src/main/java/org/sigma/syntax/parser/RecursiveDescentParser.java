@@ -32,8 +32,8 @@ public class RecursiveDescentParser {
     public static List<String> parseAndCollectErrors(String src) {
         // This method is deprecated - use parseToAst(String) instead
         // For backward compatibility, delegate to the new implementation
-        ParseAstResult result = parseToAst(src);
-        return result.errors;
+        ParseResult result = parseToAst(src);
+        return result.getErrors();
     }
 
     /**
@@ -41,7 +41,7 @@ public class RecursiveDescentParser {
      * This is the primary parsing method that works with the unified lexer.
      * Now uses ANTLR-generated parser with custom lexer tokens via adapter pattern.
      */
-    public static ParseAstResult parseToAst(List<SigmaToken> tokens) {
+    public static ParseResult parseToAst(List<SigmaToken> tokens) {
         try {
             // Convert SigmaTokens to ANTLR tokens using TokenAdapter
             List<org.antlr.v4.runtime.Token> antlrTokens = tokens.stream()
@@ -76,19 +76,19 @@ public class RecursiveDescentParser {
                         // AST conversion failed - return null AST with errors
                     }
                 }
-                return new ParseAstResult(ast, normalizeDiagnostics(errorListener.getErrors()));
+                return new ParseResult(ast, normalizeDiagnostics(errorListener.getErrors()));
             }
 
             // Convert ANTLR parse tree to custom AST
             AntlrToAstConverter converter = new AntlrToAstConverter();
             Ast.CompilationUnit ast = (Ast.CompilationUnit) converter.visit(tree);
 
-            return new ParseAstResult(ast, normalizeDiagnostics(errorListener.getErrors()));
+            return new ParseResult(ast, normalizeDiagnostics(errorListener.getErrors()));
 
         } catch (Exception e) {
             // Handle any unexpected errors during parsing
             List<String> errors = List.of("Internal parser error: " + e.getMessage());
-            return new ParseAstResult(null, errors);
+            return new ParseResult(null, errors);
         }
     }
 
@@ -96,7 +96,7 @@ public class RecursiveDescentParser {
      * Parse input string and produce an AST (CompilationUnit) along with syntax errors (if any).
      * This method delegates to the token-based parseToAst for backward compatibility.
      */
-    public static ParseAstResult parseToAst(String src) {
+    public static ParseResult parseToAst(String src) {
         try {
             SigmaLexerWrapper lexer = new SigmaLexerWrapper();
             List<SigmaToken> tokens = lexer.tokenize(src);
@@ -104,7 +104,7 @@ public class RecursiveDescentParser {
         } catch (Exception e) {
             // Handle lexer exceptions
             List<String> errors = List.of("Lexer error: " + e.getMessage());
-            return new ParseAstResult(null, errors);
+            return new ParseResult(null, errors);
         }
     }
 
@@ -147,12 +147,6 @@ public class RecursiveDescentParser {
             }
         }
         return Integer.MAX_VALUE;
-    }
-
-    public static class ParseAstResult {
-        public final Ast.CompilationUnit ast;
-        public final List<String> errors;
-        public ParseAstResult(Ast.CompilationUnit ast, List<String> errors) { this.ast = ast; this.errors = errors; }
     }
 
     // --- Parser helpers ---

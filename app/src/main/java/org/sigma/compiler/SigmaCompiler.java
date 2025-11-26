@@ -43,12 +43,12 @@ public class SigmaCompiler {
     public CompilationResult compile(String sourceCode, String className) {
         try {
             // Step 1: Parse to RD AST
-            RecursiveDescentParser.ParseAstResult rd = RecursiveDescentParser.parseToAst(sourceCode);
-            if (rd.errors != null && !rd.errors.isEmpty()) {
+            ParseResult rd = RecursiveDescentParser.parseToAst(sourceCode);
+            if (rd.getErrors() != null && !rd.getErrors().isEmpty()) {
                 // Separate non-fatal tokenization hints (suggestions) from real parse errors
                 java.util.List<String> hints = new java.util.ArrayList<>();
                 java.util.List<String> real = new java.util.ArrayList<>();
-                for (String m : rd.errors) {
+                for (String m : rd.getErrors()) {
                     if (m != null && m.contains("Did you mean")) hints.add(m);
                     else real.add(m);
                 }
@@ -63,14 +63,14 @@ public class SigmaCompiler {
             }
 
             // Step 2: Semantic analysis (RD)
-            SemanticResult semanticResult = semanticAnalyzer.analyze(rd.ast);
+            SemanticResult semanticResult = semanticAnalyzer.analyze(rd.getAst());
             if (!semanticResult.isSuccessful()) {
                 return CompilationResult.semanticFailure(null, semanticResult);
             }
 
             // Step 3: Code generation (RD)
             SigmaCodeGeneratorRD codeGenerator = new SigmaCodeGeneratorRD(semanticResult.getSymbolTable(), className);
-            byte[] bytecode = codeGenerator.generateBytecode(rd.ast);
+            byte[] bytecode = codeGenerator.generateBytecode(rd.getAst());
             if (!codeGenerator.isSuccessful()) {
                 return CompilationResult.codeGenerationFailure(null, semanticResult, codeGenerator.getErrors());
             }

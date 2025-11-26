@@ -2,6 +2,7 @@ package org.sigma.parser;
 
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.example.parser.SigmaParser;
 import org.sigma.lexer.SigmaLexerWrapper;
 import org.sigma.syntax.parser.ParseResult;
 import org.sigma.syntax.parser.SigmaParserWrapper;
@@ -30,51 +31,13 @@ public class SigmaParserWrapperTest {
 
     @Test
     void testValidVariableDeclarations() {
-        // Manually create tokens without using the lexer
-        // Simulates: int x = 10; double y = 3.14; String name = "test"; boolean flag = true;
+        // Test parsing multiple variable declarations
+        String code = "int x = 10; double y = 3.14; String name = \"test\"; boolean flag = true;";
 
-        List<Token> tokenList = new ArrayList<>();
-
-        // Line 1: int x = 10;
-        tokenList.add(new CommonToken(SigmaParser.PRIMITIVE_TYPE, "int"));
-        tokenList.add(new CommonToken(SigmaParser.IDENTIFIER, "x"));
-        tokenList.add(new CommonToken(SigmaParser.ASSIGN, "="));
-        tokenList.add(new CommonToken(SigmaParser.INTEGER, "10"));
-        tokenList.add(new CommonToken(SigmaParser.SEMI, ";"));
-
-        // Line 2: double y = 3.14;
-        tokenList.add(new CommonToken(SigmaParser.PRIMITIVE_TYPE, "double"));
-        tokenList.add(new CommonToken(SigmaParser.IDENTIFIER, "y"));
-        tokenList.add(new CommonToken(SigmaParser.ASSIGN, "="));
-        tokenList.add(new CommonToken(SigmaParser.FLOAT, "3.14"));
-        tokenList.add(new CommonToken(SigmaParser.SEMI, ";"));
-
-        // Line 3: String name = "test";
-        tokenList.add(new CommonToken(SigmaParser.STRING_TYPE, "String"));
-        tokenList.add(new CommonToken(SigmaParser.IDENTIFIER, "name"));
-        tokenList.add(new CommonToken(SigmaParser.ASSIGN, "="));
-        tokenList.add(new CommonToken(SigmaParser.STRING, "\"test\""));
-        tokenList.add(new CommonToken(SigmaParser.SEMI, ";"));
-
-        // Line 4: boolean flag = true;
-        tokenList.add(new CommonToken(SigmaParser.PRIMITIVE_TYPE, "boolean"));
-        tokenList.add(new CommonToken(SigmaParser.IDENTIFIER, "flag"));
-        tokenList.add(new CommonToken(SigmaParser.ASSIGN, "="));
-        tokenList.add(new CommonToken(SigmaParser.BOOLEAN, "true"));
-        tokenList.add(new CommonToken(SigmaParser.SEMI, ";"));
-
-        // EOF token
-        tokenList.add(new CommonToken(Token.EOF, "<EOF>"));
-
-        // Create token stream from manually constructed tokens
-        ListTokenSource tokenSource = new ListTokenSource(tokenList);
-        CommonTokenStream tokens = new CommonTokenStream(tokenSource);
-
-        // Parse using the manually created token stream
-        ParseResult result = parser.parse(tokens);
+        ParseResult result = parser.parse(code);
 
         assertTrue(result.isSuccessful());
-        assertNotNull(result.getParseTree());
+        assertNotNull(result.getAst());
         assertEquals(0, result.getErrorCount());
     }
 
@@ -89,7 +52,7 @@ public class SigmaParserWrapperTest {
 
         ParseResult result = parser.parse(code);
         assertTrue(result.isSuccessful());
-        assertNotNull(result.getParseTree());
+        assertNotNull(result.getAst());
     }
 
     @Test
@@ -109,7 +72,7 @@ public class SigmaParserWrapperTest {
 
         ParseResult result = parser.parse(code);
         assertTrue(result.isSuccessful());
-        assertNotNull(result.getParseTree());
+        assertNotNull(result.getAst());
     }
 
     @Test
@@ -126,7 +89,7 @@ public class SigmaParserWrapperTest {
 
         ParseResult result = parser.parse(code);
         assertTrue(result.isSuccessful());
-        assertNotNull(result.getParseTree());
+        assertNotNull(result.getAst());
     }
 
     @Test
@@ -141,7 +104,7 @@ public class SigmaParserWrapperTest {
 
         ParseResult result = parser.parse(code);
         assertTrue(result.isSuccessful());
-        assertNotNull(result.getParseTree());
+        assertNotNull(result.getAst());
     }
 
     @Test
@@ -157,7 +120,7 @@ public class SigmaParserWrapperTest {
 
         ParseResult result = parser.parse(code);
         assertTrue(result.isSuccessful());
-        assertNotNull(result.getParseTree());
+        assertNotNull(result.getAst());
     }
 
     @Test
@@ -170,7 +133,7 @@ public class SigmaParserWrapperTest {
 
         ParseResult result = parser.parse(code);
         assertTrue(result.isSuccessful());
-        assertNotNull(result.getParseTree());
+        assertNotNull(result.getAst());
     }
 
     @Test
@@ -182,7 +145,7 @@ public class SigmaParserWrapperTest {
 
         ParseResult result = parser.parse(code);
         assertFalse(result.isSuccessful());
-        assertNull(result.getParseTree());
+        assertNull(result.getAst());
         assertTrue(result.hasErrors());
         assertTrue(result.getErrorCount() > 0);
     }
@@ -230,7 +193,7 @@ public class SigmaParserWrapperTest {
 
         ParseResult result = parser.parse(code);
         assertTrue(result.isSuccessful());
-        assertNotNull(result.getParseTree());
+        assertNotNull(result.getAst());
     }
 
     @Test
@@ -239,7 +202,7 @@ public class SigmaParserWrapperTest {
 
         ParseResult result = parser.parse(code);
         assertTrue(result.isSuccessful());
-        assertNotNull(result.getParseTree());
+        assertNotNull(result.getAst());
     }
 
     @Test
@@ -275,7 +238,7 @@ public class SigmaParserWrapperTest {
 
         ParseResult result = parser.parse(code);
         assertTrue(result.isSuccessful());
-        assertNotNull(result.getParseTree());
+        assertNotNull(result.getAst());
     }
 
     @Test
@@ -283,8 +246,9 @@ public class SigmaParserWrapperTest {
         String code = "int x = 5;";
 
         assertDoesNotThrow(() -> {
-            ParseTree tree = parser.parseOrThrow(code);
-            assertNotNull(tree);
+            ParseResult result = parser.parseOrThrow(code);
+            assertNotNull(result);
+            assertNotNull(result.getAst());
         });
     }
 
@@ -321,7 +285,7 @@ public class SigmaParserWrapperTest {
 
         ParseResult result = parser.parse(code);
         assertTrue(result.isSuccessful(), "Boolean literals should parse correctly");
-        assertNotNull(result.getParseTree());
+        assertNotNull(result.getAst());
     }
 
     @Test
@@ -333,7 +297,7 @@ public class SigmaParserWrapperTest {
 
         ParseResult result = parser.parse(code);
         assertTrue(result.isSuccessful());
-        assertNotNull(result.getParseTree());
+        assertNotNull(result.getAst());
     }
 
     @Test
@@ -345,7 +309,7 @@ public class SigmaParserWrapperTest {
 
         ParseResult result = parser.parse(code);
         assertTrue(result.isSuccessful());
-        assertNotNull(result.getParseTree());
+        assertNotNull(result.getAst());
     }
 
     @Test
@@ -359,7 +323,7 @@ public class SigmaParserWrapperTest {
 
         ParseResult result = parser.parse(code);
         assertTrue(result.isSuccessful());
-        assertNotNull(result.getParseTree());
+        assertNotNull(result.getAst());
     }
 
     @Test
@@ -373,6 +337,6 @@ public class SigmaParserWrapperTest {
 
         ParseResult result = parser.parse(code);
         assertTrue(result.isSuccessful());
-        assertNotNull(result.getParseTree());
+        assertNotNull(result.getAst());
     }
 }

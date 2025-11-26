@@ -1,7 +1,7 @@
 package org.sigma;
 
 import org.sigma.syntax.parser.RecursiveDescentParser;
-import org.sigma.syntax.parser.RecursiveDescentParser.ParseAstResult;
+import org.sigma.syntax.parser.ParseResult;
 import org.sigma.ast.Ast;
 
 public class TestParser {
@@ -18,20 +18,20 @@ public class TestParser {
 
         for (String test : tests) {
             System.out.println("\n=== Testing: " + test + " ===");
-            ParseAstResult result = RecursiveDescentParser.parseToAst(test);
+            ParseResult result = RecursiveDescentParser.parseToAst(test);
 
-            if (result.ast != null) {
+            if (result.getAst() != null) {
                 System.out.println("✓ AST created successfully");
-                System.out.println("  Statements: " + result.ast.statements.size());
+                System.out.println("  Statements: " + result.getAst().statements.size());
             } else {
                 System.out.println("✗ AST is null");
             }
 
-            if (result.errors.isEmpty()) {
+            if (result.getErrors().isEmpty()) {
                 System.out.println("✓ No errors");
             } else {
                 System.out.println("✗ Errors:");
-                for (String error : result.errors) {
+                for (String error : result.getErrors()) {
                     System.out.println("  " + error);
                 }
             }
@@ -48,19 +48,19 @@ public class TestParser {
 
         for (String test : errorTests) {
             System.out.println("\n=== Testing: " + test + " ===");
-            ParseAstResult result = RecursiveDescentParser.parseToAst(test);
+            ParseResult result = RecursiveDescentParser.parseToAst(test);
 
-            if (result.ast != null) {
+            if (result.getAst() != null) {
                 System.out.println("  AST created (may be partial)");
             } else {
                 System.out.println("  AST is null");
             }
 
-            if (result.errors.isEmpty()) {
+            if (result.getErrors().isEmpty()) {
                 System.out.println("✗ Expected errors but got none");
             } else {
                 System.out.println("✓ Errors detected:");
-                for (String error : result.errors) {
+                for (String error : result.getErrors()) {
                     System.out.println("  " + error);
                 }
             }

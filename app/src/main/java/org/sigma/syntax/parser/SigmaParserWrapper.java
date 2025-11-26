@@ -17,11 +17,7 @@ public class SigmaParserWrapper {
      * Parse from a list of tokens (primary method for unified lexer pipeline).
      */
     public ParseResult parse(List<SigmaToken> tokens) {
-        RecursiveDescentParser.ParseAstResult r = RecursiveDescentParser.parseToAst(tokens);
-        if (r.errors != null && !r.errors.isEmpty()) {
-            return ParseResult.failure(r.errors);
-        }
-        return ParseResult.success();
+        return RecursiveDescentParser.parseToAst(tokens);
     }
 
     /**
