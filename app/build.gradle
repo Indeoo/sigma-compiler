@@ -43,6 +43,10 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+        showStandardStreams = true
+    }
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
