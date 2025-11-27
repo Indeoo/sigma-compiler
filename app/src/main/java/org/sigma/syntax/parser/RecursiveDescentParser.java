@@ -1,7 +1,6 @@
 package org.sigma.syntax.parser;
 
 import org.sigma.lexer.SigmaToken;
-import org.sigma.lexer.SigmaLexerWrapper;
 import org.example.parser.SigmaParser;
 
 import java.util.*;
@@ -73,22 +72,6 @@ public class RecursiveDescentParser {
         } catch (Exception e) {
             // Handle any unexpected errors during parsing
             List<String> errors = List.of("Internal parser error: " + e.getMessage());
-            return new ParseResult(null, errors);
-        }
-    }
-
-    /**
-     * Parse input string and produce an AST (CompilationUnit) along with syntax errors (if any).
-     * This method delegates to the token-based parseToAst for backward compatibility.
-     */
-    public static ParseResult parseToAst(String src) {
-        try {
-            SigmaLexerWrapper lexer = new SigmaLexerWrapper();
-            List<SigmaToken> tokens = lexer.tokenize(src);
-            return parseToAst(tokens);
-        } catch (Exception e) {
-            // Handle lexer exceptions
-            List<String> errors = List.of("Lexer error: " + e.getMessage());
             return new ParseResult(null, errors);
         }
     }
