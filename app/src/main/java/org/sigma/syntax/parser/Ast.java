@@ -52,6 +52,64 @@ public class Ast {
         public final Expression expr; public final int line, col; public ReturnStatement(Expression e, int line, int col) { this.expr = e; this.line=line; this.col=col; }
     }
 
+    // Parameter for method declarations
+    public static class Parameter {
+        public final String type;
+        public final String name;
+        public final int line, col;
+        public Parameter(String type, String name, int line, int col) {
+            this.type = type;
+            this.name = name;
+            this.line = line;
+            this.col = col;
+        }
+    }
+
+    // Method declaration
+    public static class MethodDeclaration implements Statement {
+        public final String returnType;
+        public final String name;
+        public final List<Parameter> parameters;
+        public final Block body;
+        public final int line, col;
+        public MethodDeclaration(String returnType, String name, List<Parameter> parameters, Block body, int line, int col) {
+            this.returnType = returnType;
+            this.name = name;
+            this.parameters = parameters;
+            this.body = body;
+            this.line = line;
+            this.col = col;
+        }
+    }
+
+    // Field declaration (for class members)
+    public static class FieldDeclaration implements Statement {
+        public final String typeName;
+        public final String name;
+        public final Expression init; // may be null
+        public final int line, col;
+        public FieldDeclaration(String typeName, String name, Expression init, int line, int col) {
+            this.typeName = typeName;
+            this.name = name;
+            this.init = init;
+            this.line = line;
+            this.col = col;
+        }
+    }
+
+    // Class declaration
+    public static class ClassDeclaration implements Statement {
+        public final String name;
+        public final List<Statement> members; // fields and methods
+        public final int line, col;
+        public ClassDeclaration(String name, List<Statement> members, int line, int col) {
+            this.name = name;
+            this.members = members;
+            this.line = line;
+            this.col = col;
+        }
+    }
+
     // Expressions
     public interface Expression {}
 
@@ -65,5 +123,18 @@ public class Ast {
     public static class Binary implements Expression { public final String op; public final Expression left, right; public final int line, col; public Binary(String op, Expression l, Expression r, int line, int col){this.op=op;this.left=l;this.right=r; this.line=line; this.col=col;} }
     public static class Unary implements Expression { public final String op; public final Expression expr; public final int line, col; public Unary(String op, Expression e, int line, int col){this.op=op;this.expr=e; this.line=line; this.col=col;} }
     public static class Call implements Expression { public final Expression target; public final List<Expression> args; public final int line, col; public Call(Expression target, List<Expression> args, int line, int col){this.target=target;this.args=args; this.line=line; this.col=col;} }
+
+    // Member access (dot notation)
+    public static class MemberAccess implements Expression {
+        public final Expression object;
+        public final String memberName;
+        public final int line, col;
+        public MemberAccess(Expression object, String memberName, int line, int col) {
+            this.object = object;
+            this.memberName = memberName;
+            this.line = line;
+            this.col = col;
+        }
+    }
 
 }

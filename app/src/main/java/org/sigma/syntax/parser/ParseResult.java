@@ -109,6 +109,55 @@ public class ParseResult {
             return sb.toString();
         }
 
+        if (stmt instanceof Ast.MethodDeclaration) {
+            Ast.MethodDeclaration md = (Ast.MethodDeclaration) stmt;
+            StringBuilder sb = new StringBuilder();
+
+            // Method signature
+            sb.append("MethodDeclaration(")
+              .append(md.returnType).append(" ")
+              .append(md.name).append("(");
+
+            // Parameters
+            for (int i = 0; i < md.parameters.size(); i++) {
+                Ast.Parameter p = md.parameters.get(i);
+                sb.append(p.type).append(" ").append(p.name);
+                if (i < md.parameters.size() - 1) sb.append(", ");
+            }
+            sb.append(")) {\n");
+
+            // Body
+            sb.append(indentStr).append("  ")
+              .append(statementToString(md.body, indent + 1));
+            sb.append("\n").append(indentStr).append("}");
+
+            return sb.toString();
+        }
+
+        if (stmt instanceof Ast.ClassDeclaration) {
+            Ast.ClassDeclaration cd = (Ast.ClassDeclaration) stmt;
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("ClassDeclaration(").append(cd.name).append(") {\n");
+
+            // Members (fields and methods)
+            for (Ast.Statement member : cd.members) {
+                sb.append(indentStr).append("  ")
+                  .append(statementToString(member, indent + 1))
+                  .append("\n");
+            }
+
+            sb.append(indentStr).append("}");
+            return sb.toString();
+        }
+
+        if (stmt instanceof Ast.FieldDeclaration) {
+            Ast.FieldDeclaration fd = (Ast.FieldDeclaration) stmt;
+            String init = fd.init != null ? " = " + exprToString(fd.init) : "";
+            return String.format("FieldDeclaration(%s %s%s)",
+                                 fd.typeName, fd.name, init);
+        }
+
         return stmt.getClass().getSimpleName();
     }
 
@@ -150,6 +199,10 @@ public class ParseResult {
             }
             sb.append(")");
             return sb.toString();
+        }
+        if (expr instanceof Ast.MemberAccess) {
+            Ast.MemberAccess ma = (Ast.MemberAccess) expr;
+            return String.format("%s.%s", exprToString(ma.object), ma.memberName);
         }
         return expr.getClass().getSimpleName();
     }

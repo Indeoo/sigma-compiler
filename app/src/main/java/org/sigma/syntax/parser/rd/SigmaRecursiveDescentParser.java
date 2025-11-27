@@ -148,7 +148,6 @@ public class SigmaRecursiveDescentParser {
 
     /**
      * methodDeclaration: type IDENTIFIER LPAREN parameterList? RPAREN block
-     * Parses but returns as Block for now (until AST supports methods)
      */
     private GrammarRule<Ast.Statement> methodDeclaration() {
         return ctx -> {
@@ -171,10 +170,10 @@ public class SigmaRecursiveDescentParser {
                 return null;
             }
 
-            // parameterList: parameter (COMMA parameter)*
-            // parameter: type IDENTIFIER
+            // Parse parameter list
+            List<Ast.Parameter> parameters = new ArrayList<>();
             if (!ctx.check(TokenType.RPAREN)) {
-                // Parse parameters
+                // Parse parameters: type IDENTIFIER (COMMA type IDENTIFIER)*
                 do {
                     String paramType = type().parse(ctx);
                     if (paramType == null) {
@@ -186,6 +185,12 @@ public class SigmaRecursiveDescentParser {
                         ctx.error("Expected parameter name");
                         break;
                     }
+                    parameters.add(new Ast.Parameter(
+                        paramType,
+                        paramName.getText(),
+                        paramName.getLine(),
+                        paramName.getCharPositionInLine()
+                    ));
                 } while (ctx.match(TokenType.COMMA) != null);
             }
 
@@ -196,15 +201,21 @@ public class SigmaRecursiveDescentParser {
                 ctx.error("Expected method body");
             }
 
-            // Return the body as a statement (AST doesn't have MethodDeclaration yet)
-            return body;
+            // Return proper MethodDeclaration node
+            return new Ast.MethodDeclaration(
+                returnType,
+                methodName.getText(),
+                parameters,
+                body,
+                methodName.getLine(),
+                methodName.getCharPositionInLine()
+            );
         };
     }
 
     /**
      * classDeclaration: CLASS IDENTIFIER classBody
      * classBody: LBRACE (declaration | statement)* RBRACE
-     * Parses but returns as Block for now (until AST supports classes)
      */
     private GrammarRule<Ast.Statement> classDeclaration() {
         return ctx -> {
@@ -220,7 +231,7 @@ public class SigmaRecursiveDescentParser {
                 ctx.error("Expected class name after 'class'");
             }
 
-            // Parse class body (same as block)
+            // Parse class body
             if (ctx.match(TokenType.LBRACE) == null) {
                 ctx.error("Expected '{' after class name");
                 return null;
@@ -246,8 +257,13 @@ public class SigmaRecursiveDescentParser {
 
             ctx.expect(TokenType.RBRACE, "Expected '}' to close class");
 
-            // Return as Block (AST doesn't have ClassDeclaration yet)
-            return new Ast.Block(members);
+            // Return proper ClassDeclaration node
+            return new Ast.ClassDeclaration(
+                className != null ? className.getText() : "<error>",
+                members,
+                className != null ? className.getLine() : 0,
+                className != null ? className.getCharPositionInLine() : 0
+            );
         };
     }
 
@@ -675,11 +691,20 @@ public class SigmaRecursiveDescentParser {
                     ctx.expect(TokenType.RPAREN, "Expected ')' after arguments");
                     expr = new Ast.Call(expr, args, lparen.getLine(), lparen.getCharPositionInLine());
                 }
-                // Member access: DOT IDENTIFIER (not fully implemented in AST yet)
+                // Member access: DOT IDENTIFIER
                 else if (ctx.check(TokenType.DOT)) {
-                    ctx.consume(); // consume DOT
-                    ctx.expect(TokenType.IDENTIFIER, "Expected identifier after '.'");
-                    // TODO: Create member access AST node when available
+                    SigmaToken dot = ctx.consume(); // consume DOT
+                    SigmaToken memberName = ctx.match(TokenType.IDENTIFIER);
+                    if (memberName == null) {
+                        ctx.error("Expected identifier after '.'");
+                        break;
+                    }
+                    expr = new Ast.MemberAccess(
+                        expr,
+                        memberName.getText(),
+                        dot.getLine(),
+                        dot.getCharPositionInLine()
+                    );
                 }
                 else {
                     break;
