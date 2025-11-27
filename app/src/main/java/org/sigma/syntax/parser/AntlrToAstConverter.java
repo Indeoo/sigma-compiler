@@ -1,6 +1,7 @@
 package org.sigma.syntax.parser;
 
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.example.parser.SigmaBaseVisitor;
 import org.example.parser.SigmaParser;
 
@@ -204,11 +205,26 @@ public class AntlrToAstConverter extends SigmaBaseVisitor<Object> {
 
     @Override
     public Object visitAdditiveExpression(SigmaParser.AdditiveExpressionContext ctx) {
-        // additiveExpression: multiplicativeExpression (ADDITIVE multiplicativeExpression)*
+        // additiveExpression: multiplicativeExpression ((PLUS | MINUS) multiplicativeExpression)*
         Ast.Expression left = (Ast.Expression) visit(ctx.multiplicativeExpression(0));
 
+        // Get all operators in order by checking children
+        int opIndex = 0;
         for (int i = 1; i < ctx.multiplicativeExpression().size(); i++) {
-            Token op = ctx.ADDITIVE(i - 1).getSymbol();
+            // Find the next operator token in the parse tree
+            Token op = null;
+            while (opIndex < ctx.getChildCount() && op == null) {
+                ParseTree child = ctx.getChild(opIndex);
+                if (child instanceof org.antlr.v4.runtime.tree.TerminalNode) {
+                    org.antlr.v4.runtime.tree.TerminalNode terminal = (org.antlr.v4.runtime.tree.TerminalNode) child;
+                    int tokenType = terminal.getSymbol().getType();
+                    if (tokenType == SigmaParser.PLUS || tokenType == SigmaParser.MINUS) {
+                        op = terminal.getSymbol();
+                    }
+                }
+                opIndex++;
+            }
+
             Ast.Expression right = (Ast.Expression) visit(ctx.multiplicativeExpression(i));
             left = new Ast.Binary(op.getText(), left, right, op.getLine(), op.getCharPositionInLine());
         }

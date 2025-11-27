@@ -56,8 +56,8 @@ public class TokenAdapter implements Token {
         TOKEN_TYPE_MAP.put(TokenType.MULT, SigmaParser.MULTIPLICATIVE);
         TOKEN_TYPE_MAP.put(TokenType.DIV, SigmaParser.MULTIPLICATIVE);
         TOKEN_TYPE_MAP.put(TokenType.MOD, SigmaParser.MULTIPLICATIVE);
-        TOKEN_TYPE_MAP.put(TokenType.PLUS, SigmaParser.ADDITIVE);
-        TOKEN_TYPE_MAP.put(TokenType.MINUS, SigmaParser.MINUS);  // Special: also used as unary
+        TOKEN_TYPE_MAP.put(TokenType.PLUS, SigmaParser.PLUS);
+        TOKEN_TYPE_MAP.put(TokenType.MINUS, SigmaParser.MINUS);
 
         TOKEN_TYPE_MAP.put(TokenType.LT, SigmaParser.RELATIONAL);
         TOKEN_TYPE_MAP.put(TokenType.GT, SigmaParser.RELATIONAL);
@@ -69,6 +69,10 @@ public class TokenAdapter implements Token {
         TOKEN_TYPE_MAP.put(TokenType.AND, SigmaParser.LOGICAL);
         TOKEN_TYPE_MAP.put(TokenType.OR, SigmaParser.LOGICAL);
         TOKEN_TYPE_MAP.put(TokenType.NOT, SigmaParser.NOT);
+
+        // Single & and | are invalid in Sigma (must use && and ||)
+        TOKEN_TYPE_MAP.put(TokenType.AMPERSAND, Token.INVALID_TYPE);
+        TOKEN_TYPE_MAP.put(TokenType.PIPE, Token.INVALID_TYPE);
 
         TOKEN_TYPE_MAP.put(TokenType.ASSIGN, SigmaParser.ASSIGN);
 
@@ -87,7 +91,18 @@ public class TokenAdapter implements Token {
 
     public TokenAdapter(SigmaToken sigmaToken) {
         this.sigmaToken = sigmaToken;
-        this.antlrType = TOKEN_TYPE_MAP.getOrDefault(sigmaToken.getType(), Token.INVALID_TYPE);
+
+        // Check if token type is mapped
+        Integer mappedType = TOKEN_TYPE_MAP.get(sigmaToken.getType());
+        if (mappedType == null) {
+            throw new IllegalArgumentException(
+                "Unmapped token type: " + sigmaToken.getType() +
+                " '" + sigmaToken.getText() + "' at line " + sigmaToken.getLine() +
+                ", column " + sigmaToken.getColumn()
+            );
+        }
+
+        this.antlrType = mappedType;
     }
 
     @Override
