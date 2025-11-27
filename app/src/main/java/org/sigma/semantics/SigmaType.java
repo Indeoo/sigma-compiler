@@ -141,8 +141,8 @@ public abstract class SigmaType {
 
         @Override
         public boolean isCompatibleWith(SigmaType other) {
-            // Void is never compatible with anything
-            return false;
+            // Void is only compatible with void
+            return other instanceof VoidType;
         }
     }
 

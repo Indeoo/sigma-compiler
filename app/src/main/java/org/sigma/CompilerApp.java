@@ -2,6 +2,8 @@ package org.sigma;
 
 import org.sigma.lexer.SigmaLexerWrapper;
 import org.sigma.lexer.SigmaToken;
+import org.sigma.semantics.SemanticAnalyzer;
+import org.sigma.semantics.SemanticResult;
 import org.sigma.syntax.parser.ParseResult;
 import org.sigma.syntax.parser.SigmaParserWrapper;
 
@@ -13,9 +15,18 @@ import java.util.List;
 public class CompilerApp {
 
     public static void main(String[] args) throws IOException {
-        Path p = args.length > 0 ? Path.of(args[0]) : Path.of("app/src/main/resources", "source.groovy");
+        Path p;
+        if (args.length > 0) {
+            p = Path.of(args[0]);
+        } else {
+            // Try multiple possible locations for the default source file
+            // This handles both Gradle (cwd = app/) and IntelliJ (cwd = project root)
+            p = findSourceFile();
+        }
+
         if (!Files.exists(p)) {
             System.err.println("Demo file not found: " + p.toAbsolutePath());
+            System.err.println("Current working directory: " + Path.of("").toAbsolutePath());
             System.exit(2);
         }
         String src = Files.readString(p);
@@ -26,6 +37,39 @@ public class CompilerApp {
 
         System.out.println(parseResult);
         System.out.println(parseResult.getAstAsString());
+
+        // Run semantic analysis
+        System.out.println("\n" + "=".repeat(70));
+        System.out.println("SEMANTIC ANALYSIS");
+        System.out.println("=".repeat(70));
+
+        SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer();
+        SemanticResult semanticResult = semanticAnalyzer.analyze(parseResult.getAst());
+
+        System.out.println(semanticResult.visualize());
+    }
+
+    /**
+     * Find the source file by trying multiple possible locations.
+     * This handles different working directories (Gradle vs IntelliJ).
+     */
+    private static Path findSourceFile() {
+        // Possible locations to try
+        String[] possiblePaths = {
+            "src/main/resources/source.groovy",           // From app/ directory (Gradle)
+            "app/src/main/resources/source.groovy",       // From project root (IntelliJ)
+            "./app/src/main/resources/source.groovy"      // Alternative from project root
+        };
+
+        for (String pathStr : possiblePaths) {
+            Path p = Path.of(pathStr);
+            if (Files.exists(p)) {
+                return p;
+            }
+        }
+
+        // Default to first option if none found (will show error with helpful message)
+        return Path.of("src/main/resources/source.groovy");
     }
 
     private static List<SigmaToken> run_lexer(String src) {
