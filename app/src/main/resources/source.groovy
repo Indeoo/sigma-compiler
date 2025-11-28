@@ -1,26 +1,17 @@
-int factorial(int n) {
-    if (n <= 1) {
-        return 1;
-    } else {
-        return n * factorial(n - 1);
-    }
-}
+// Test complex expressions and control flow
 
-class Calculator {
-    double pi = 3.14159;
+int a = 10;
+int b = 5;
+int c = 3;
 
-    double circleArea(double radius) {
-        return pi * radius * radius;
-    }
-}
+// Test complex arithmetic
+int result = a * b + c - 2;
 
-int main() {
-    int num = 5;
-    int fact = factorial(num);
-    println("Factorial of " + num + " is " + fact);
+// Test comparison and logical operators
+boolean flag1 = a > b;
+boolean flag2 = b <= c;
+boolean combined = flag1 && flag2;
 
-    double area = circleArea(2.5);
-    println("Circle area: " + area);
-
-    return 0;
-}
+// Test unary operators
+int negated = -a;
+boolean inverted = !flag1;

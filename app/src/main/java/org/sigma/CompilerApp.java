@@ -1,5 +1,7 @@
 package org.sigma;
 
+import org.sigma.ir.RPNGenerator;
+import org.sigma.ir.RPNProgram;
 import org.sigma.lexer.SigmaLexerWrapper;
 import org.sigma.lexer.SigmaToken;
 import org.sigma.semantics.SemanticAnalyzer;
@@ -47,6 +49,20 @@ public class CompilerApp {
         SemanticResult semanticResult = semanticAnalyzer.analyze(parseResult.getAst());
 
         System.out.println(semanticResult.visualize());
+
+        // Generate RPN intermediate representation
+        if (semanticResult.isSuccessful()) {
+            System.out.println("\n" + "=".repeat(70));
+            System.out.println("RPN INTERMEDIATE REPRESENTATION");
+            System.out.println("=".repeat(70));
+
+            RPNGenerator rpnGenerator = new RPNGenerator(semanticResult);
+            RPNProgram rpnProgram = rpnGenerator.generate(parseResult.getAst());
+
+            System.out.println(rpnProgram.visualize());
+        } else {
+            System.out.println("\nSkipping RPN generation due to semantic errors.");
+        }
     }
 
     /**
