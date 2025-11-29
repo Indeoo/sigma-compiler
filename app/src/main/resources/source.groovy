@@ -15,3 +15,14 @@ boolean combined = flag1 && flag2;
 // Test unary operators
 int negated = -a;
 boolean inverted = !flag1;
+
+class Calculator {
+
+    double circleArea(double radius) {
+        return 3.14159 * radius * radius;
+    }
+}
+
+Calculator calculator = new Calculator();
+
+calculator.circleArea(1)

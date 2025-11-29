@@ -255,6 +255,8 @@ public class RPNGenerator {
             generateCall((Ast.Call) expr);
         } else if (expr instanceof Ast.MemberAccess) {
             generateMemberAccess((Ast.MemberAccess) expr);
+        } else if (expr instanceof Ast.NewInstance) {
+            generateNewInstance((Ast.NewInstance) expr);
         } else {
             throw new UnsupportedOperationException(
                 "Unsupported expression type: " + expr.getClass().getSimpleName()
@@ -358,6 +360,30 @@ public class RPNGenerator {
         SigmaType fieldType = typeOf(memberAccess);
         emit(new RPNInstruction(RPNOpcode.GET_FIELD, memberAccess.memberName,
             fieldType, memberAccess.line, memberAccess.col));
+    }
+
+    private void generateNewInstance(Ast.NewInstance newInstance) {
+        SigmaType objectType = typeOf(newInstance);
+
+        // Step 1: Allocate uninitialized object
+        emit(new RPNInstruction(RPNOpcode.NEW, newInstance.className, objectType,
+            newInstance.line, newInstance.col));
+
+        // Step 2: Duplicate object reference (one for constructor, one for return value)
+        emit(new RPNInstruction(RPNOpcode.DUP, null, objectType,
+            newInstance.line, newInstance.col));
+
+        // Step 3: Push all constructor arguments onto stack
+        for (Ast.Expression arg : newInstance.args) {
+            generateExpression(arg);
+        }
+
+        // Step 4: Call constructor (INVOKESPECIAL <init>)
+        // This consumes the duplicate reference and all arguments
+        emit(RPNInstruction.invokespecial("<init>", newInstance.args.size(),
+            TypeRegistry.VOID, newInstance.line, newInstance.col));
+
+        // Stack now contains: [initialized_object]
     }
 
     // ============ Helper Methods ============

@@ -14,6 +14,7 @@ public enum TokenType {
     RETURN,     // "return"
     FINAL,      // "final"
     NULL,       // "null"
+    NEW,        // "new"
 
     // Primitive type keywords
     INT,        // "int"

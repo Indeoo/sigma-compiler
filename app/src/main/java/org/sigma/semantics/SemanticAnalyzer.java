@@ -439,6 +439,8 @@ public class SemanticAnalyzer {
             type = inferCallType((Ast.Call) expr);
         } else if (expr instanceof Ast.MemberAccess) {
             type = inferMemberAccessType((Ast.MemberAccess) expr);
+        } else if (expr instanceof Ast.NewInstance) {
+            type = inferNewInstanceType((Ast.NewInstance) expr);
         } else {
             type = TypeRegistry.ERROR;
         }
@@ -614,5 +616,52 @@ public class SemanticAnalyzer {
         }
 
         return TypeRegistry.ERROR;
+    }
+
+    /**
+     * Infer type of object instantiation expression
+     */
+    private SigmaType inferNewInstanceType(Ast.NewInstance newInstance) {
+        String className = newInstance.className;
+
+        // Check if it's a primitive type (which can't be instantiated)
+        if (className.equals("int") || className.equals("double") ||
+            className.equals("float") || className.equals("boolean")) {
+            errors.add(new SemanticError(
+                SemanticError.SemanticErrorType.INVALID_CONSTRUCTOR_CALL,
+                "Cannot instantiate primitive type: " + className,
+                newInstance.line, newInstance.col
+            ));
+            return TypeRegistry.ERROR;
+        }
+
+        // Check if class exists in symbol table
+        Symbol classSymbol = symbolTable.lookup(className);
+        if (classSymbol == null) {
+            errors.add(new SemanticError(
+                SemanticError.SemanticErrorType.UNDEFINED_CLASS,
+                "Undefined class: " + className,
+                newInstance.line, newInstance.col
+            ));
+            return TypeRegistry.ERROR;
+        }
+
+        // Verify it's actually a class
+        if (!classSymbol.isClass()) {
+            errors.add(new SemanticError(
+                SemanticError.SemanticErrorType.INVALID_CONSTRUCTOR_CALL,
+                className + " is not a class",
+                newInstance.line, newInstance.col
+            ));
+            return TypeRegistry.ERROR;
+        }
+
+        // Type-check arguments
+        for (Ast.Expression arg : newInstance.args) {
+            inferExpressionType(arg);
+        }
+
+        // Return the class type
+        return classSymbol.getType();
     }
 }

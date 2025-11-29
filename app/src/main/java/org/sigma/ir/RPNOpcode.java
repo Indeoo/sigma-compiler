@@ -226,6 +226,14 @@ public enum RPNOpcode {
     NEW,
 
     /**
+     * INVOKESPECIAL method_name arg_count
+     * Invokes a constructor or private method.
+     * Used for calling <init> constructors after NEW + DUP.
+     * Operand: method name (String, usually "<init>") and argument count (Integer)
+     */
+    INVOKESPECIAL,
+
+    /**
      * GET_FIELD object field_name
      * Pops an object reference, pushes the field value.
      * Operand: field name (String)
@@ -267,6 +275,7 @@ public enum RPNOpcode {
             case JUMP_IF_TRUE:
             case CALL:
             case NEW:
+            case INVOKESPECIAL:
             case GET_FIELD:
             case SET_FIELD:
                 return true;
