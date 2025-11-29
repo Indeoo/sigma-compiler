@@ -1,1 +1,1 @@
-runcode println(2 ** 3 ** 2);
+runcode println(2 ^ 3 ^ 2);
