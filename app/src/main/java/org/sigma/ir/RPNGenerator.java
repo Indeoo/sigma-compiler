@@ -1,7 +1,7 @@
 package org.sigma.ir;
 
 import org.sigma.semantics.*;
-import org.sigma.syntax.parser.Ast;
+import org.sigma.parser.Ast;
 
 import java.util.*;
 

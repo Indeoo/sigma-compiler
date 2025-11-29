@@ -1,4 +1,4 @@
-package org.sigma.syntax.parser;
+package org.sigma.parser;
 
 import java.util.List;
 

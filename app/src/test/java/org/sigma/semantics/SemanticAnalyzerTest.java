@@ -1,7 +1,7 @@
 package org.sigma.semantics;
 
 import org.junit.jupiter.api.Test;
-import org.sigma.syntax.parser.Ast;
+import org.sigma.parser.Ast;
 
 import java.util.ArrayList;
 import java.util.List;

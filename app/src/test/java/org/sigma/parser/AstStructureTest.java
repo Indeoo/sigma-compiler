@@ -1,9 +1,6 @@
 package org.sigma.parser;
 
 import org.junit.jupiter.api.Test;
-import org.sigma.syntax.parser.Ast;
-import org.sigma.syntax.parser.ParseResult;
-import org.sigma.syntax.parser.SigmaParserWrapper;
 
 import static org.junit.jupiter.api.Assertions.*;
 

@@ -1,7 +1,7 @@
-package org.sigma.syntax.parser;
+package org.sigma.parser;
 
 import org.sigma.lexer.SigmaToken;
-import org.sigma.syntax.parser.rd.SigmaRecursiveDescentParser;
+import org.sigma.parser.rd.SigmaRecursiveDescentParser;
 
 import java.util.*;
 
@@ -15,7 +15,7 @@ import java.util.*;
  */
 public class RecursiveDescentParser {
 
-    // Parser builds AST nodes defined in org.sigma.syntax.parser.Ast
+    // Parser builds AST nodes defined in org.sigma.syntax.Ast
 
     /**
      * Parse from a list of SigmaTokens and produce an AST (CompilationUnit) along with syntax errors (if any).

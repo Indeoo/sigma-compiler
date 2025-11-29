@@ -1,4 +1,4 @@
-package org.sigma.syntax.parser.rd;
+package org.sigma.parser.rd;
 
 /**
  * Functional interface representing a grammar rule in the recursive descent parser.

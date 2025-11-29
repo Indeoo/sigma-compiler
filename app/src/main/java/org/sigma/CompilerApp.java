@@ -6,8 +6,8 @@ import org.sigma.lexer.SigmaLexerWrapper;
 import org.sigma.lexer.SigmaToken;
 import org.sigma.semantics.SemanticAnalyzer;
 import org.sigma.semantics.SemanticResult;
-import org.sigma.syntax.parser.ParseResult;
-import org.sigma.syntax.parser.SigmaParserWrapper;
+import org.sigma.parser.ParseResult;
+import org.sigma.parser.SigmaParserWrapper;
 
 import java.io.IOException;
 import java.nio.file.Files;

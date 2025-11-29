@@ -1,13 +1,13 @@
-package org.sigma.syntax.parser.rd;
+package org.sigma.parser.rd;
 
 import org.sigma.lexer.SigmaToken;
 import org.sigma.lexer.TokenType;
-import org.sigma.syntax.parser.Ast;
+import org.sigma.parser.Ast;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.sigma.syntax.parser.rd.RuleCombinators.*;
+import static org.sigma.parser.rd.RuleCombinators.*;
 
 /**
  * Pure Recursive Descent Parser for Sigma language without ANTLR dependencies.

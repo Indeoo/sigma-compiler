@@ -1,16 +1,8 @@
 package org.sigma.parser;
 
-import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.example.parser.SigmaParser;
 import org.sigma.lexer.SigmaLexerWrapper;
-import org.sigma.syntax.parser.ParseResult;
-import org.sigma.syntax.parser.SigmaParserWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 

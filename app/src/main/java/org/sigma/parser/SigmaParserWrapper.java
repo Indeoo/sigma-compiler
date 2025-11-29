@@ -1,11 +1,8 @@
-package org.sigma.syntax.parser;
+package org.sigma.parser;
 
 import org.sigma.lexer.SigmaToken;
 import org.sigma.lexer.SigmaLexerWrapper;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 
 /**

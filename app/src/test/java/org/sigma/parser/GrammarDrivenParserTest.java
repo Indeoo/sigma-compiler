@@ -1,8 +1,6 @@
 package org.sigma.parser;
 
 import org.junit.jupiter.api.Test;
-import org.sigma.syntax.parser.RecursiveDescentParser;
-import org.sigma.syntax.parser.ParseResult;
 import org.sigma.lexer.SigmaLexerWrapper;
 import org.sigma.lexer.SigmaToken;
 

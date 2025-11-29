@@ -1,4 +1,4 @@
-package org.sigma.syntax.parser.rd;
+package org.sigma.parser.rd;
 
 import org.sigma.lexer.SigmaToken;
 import org.sigma.lexer.TokenType;
