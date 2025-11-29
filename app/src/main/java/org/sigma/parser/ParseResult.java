@@ -39,172 +39,189 @@ public class ParseResult {
             return "No AST (parse failed)";
         }
         StringBuilder sb = new StringBuilder();
-        sb.append("CompilationUnit {\n");
-        for (int i = 0; i < ast.statements.size(); i++) {
-            sb.append("  ").append(statementToString(ast.statements.get(i), 1));
-            if (i < ast.statements.size() - 1) {
-                sb.append("\n");
-            }
-        }
-        sb.append("\n}");
+        printCompilationUnit(ast, sb, 0);
         return sb.toString();
     }
 
-    private String statementToString(Ast.Statement stmt, int indent) {
-        String indentStr = "  ".repeat(indent);
-
-        if (stmt instanceof Ast.VariableDeclaration) {
-            Ast.VariableDeclaration vd = (Ast.VariableDeclaration) stmt;
-            String init = vd.init != null ? " = " + exprToString(vd.init) : "";
-            return String.format("VariableDeclaration(%s %s%s)", vd.typeName, vd.name, init);
+    private void printCompilationUnit(Ast.CompilationUnit ast, StringBuilder sb, int indent) {
+        indent(sb, indent).append("[CompilationUnit]").append('\n');
+        for (Ast.Statement stmt : ast.statements) {
+            printStatement(stmt, sb, indent + 1);
         }
-
-        if (stmt instanceof Ast.Assignment) {
-            Ast.Assignment a = (Ast.Assignment) stmt;
-            return String.format("Assignment(%s = %s)", a.name, exprToString(a.value));
-        }
-
-        if (stmt instanceof Ast.ExpressionStatement) {
-            Ast.ExpressionStatement es = (Ast.ExpressionStatement) stmt;
-            return "ExpressionStatement(" + exprToString(es.expr) + ")";
-        }
-
-        if (stmt instanceof Ast.IfStatement) {
-            Ast.IfStatement ifs = (Ast.IfStatement) stmt;
-            StringBuilder sb = new StringBuilder();
-            sb.append("IfStatement {\n");
-            sb.append(indentStr).append("  condition: ").append(exprToString(ifs.cond)).append("\n");
-            sb.append(indentStr).append("  then: ").append(statementToString(ifs.thenBranch, indent + 1));
-            if (ifs.elseBranch != null) {
-                sb.append("\n").append(indentStr).append("  else: ").append(statementToString(ifs.elseBranch, indent + 1));
-            }
-            sb.append("\n").append(indentStr).append("}");
-            return sb.toString();
-        }
-
-        if (stmt instanceof Ast.WhileStatement) {
-            Ast.WhileStatement ws = (Ast.WhileStatement) stmt;
-            StringBuilder sb = new StringBuilder();
-            sb.append("WhileStatement {\n");
-            sb.append(indentStr).append("  condition: ").append(exprToString(ws.cond)).append("\n");
-            sb.append(indentStr).append("  body: ").append(statementToString(ws.body, indent + 1));
-            sb.append("\n").append(indentStr).append("}");
-            return sb.toString();
-        }
-
-        if (stmt instanceof Ast.ReturnStatement) {
-            Ast.ReturnStatement rs = (Ast.ReturnStatement) stmt;
-            String expr = rs.expr != null ? exprToString(rs.expr) : "void";
-            return "ReturnStatement(" + expr + ")";
-        }
-
-        if (stmt instanceof Ast.Block) {
-            Ast.Block b = (Ast.Block) stmt;
-            StringBuilder sb = new StringBuilder();
-            sb.append("Block {\n");
-            for (Ast.Statement s : b.statements) {
-                sb.append(indentStr).append("  ").append(statementToString(s, indent + 1)).append("\n");
-            }
-            sb.append(indentStr).append("}");
-            return sb.toString();
-        }
-
-        if (stmt instanceof Ast.MethodDeclaration) {
-            Ast.MethodDeclaration md = (Ast.MethodDeclaration) stmt;
-            StringBuilder sb = new StringBuilder();
-
-            // Method signature
-            sb.append("MethodDeclaration(")
-              .append(md.returnType).append(" ")
-              .append(md.name).append("(");
-
-            // Parameters
-            for (int i = 0; i < md.parameters.size(); i++) {
-                Ast.Parameter p = md.parameters.get(i);
-                sb.append(p.type).append(" ").append(p.name);
-                if (i < md.parameters.size() - 1) sb.append(", ");
-            }
-            sb.append(")) {\n");
-
-            // Body
-            sb.append(indentStr).append("  ")
-              .append(statementToString(md.body, indent + 1));
-            sb.append("\n").append(indentStr).append("}");
-
-            return sb.toString();
-        }
-
-        if (stmt instanceof Ast.ClassDeclaration) {
-            Ast.ClassDeclaration cd = (Ast.ClassDeclaration) stmt;
-            StringBuilder sb = new StringBuilder();
-
-            sb.append("ClassDeclaration(").append(cd.name).append(") {\n");
-
-            // Members (fields and methods)
-            for (Ast.Statement member : cd.members) {
-                sb.append(indentStr).append("  ")
-                  .append(statementToString(member, indent + 1))
-                  .append("\n");
-            }
-
-            sb.append(indentStr).append("}");
-            return sb.toString();
-        }
-
-        if (stmt instanceof Ast.FieldDeclaration) {
-            Ast.FieldDeclaration fd = (Ast.FieldDeclaration) stmt;
-            String init = fd.init != null ? " = " + exprToString(fd.init) : "";
-            return String.format("FieldDeclaration(%s %s%s)",
-                                 fd.typeName, fd.name, init);
-        }
-
-        return stmt.getClass().getSimpleName();
     }
 
-    private String exprToString(Ast.Expression expr) {
+    private void printStatement(Ast.Statement stmt, StringBuilder sb, int indent) {
+        if (stmt instanceof Ast.VariableDeclaration) {
+            Ast.VariableDeclaration vd = (Ast.VariableDeclaration) stmt;
+            indent(sb, indent).append("[VariableDeclaration]").append('\n');
+            indent(sb, indent + 1).append("[Type] ").append(vd.typeName).append('\n');
+            indent(sb, indent + 1).append("[Identifier] ").append(vd.name).append('\n');
+            if (vd.init != null) {
+                indent(sb, indent + 1).append("[Initializer]").append('\n');
+                printExpression(vd.init, sb, indent + 2);
+            }
+            return;
+        }
+        if (stmt instanceof Ast.Assignment) {
+            Ast.Assignment a = (Ast.Assignment) stmt;
+            indent(sb, indent).append("[Assignment]").append('\n');
+            indent(sb, indent + 1).append("[Identifier] ").append(a.name).append('\n');
+            indent(sb, indent + 1).append("[Value]").append('\n');
+            printExpression(a.value, sb, indent + 2);
+            return;
+        }
+        if (stmt instanceof Ast.ExpressionStatement) {
+            indent(sb, indent).append("[ExpressionStatement]").append('\n');
+            printExpression(((Ast.ExpressionStatement) stmt).expr, sb, indent + 1);
+            return;
+        }
+        if (stmt instanceof Ast.IfStatement) {
+            Ast.IfStatement ifs = (Ast.IfStatement) stmt;
+            indent(sb, indent).append("[IfStatement]").append('\n');
+            indent(sb, indent + 1).append("[Condition]").append('\n');
+            printExpression(ifs.cond, sb, indent + 2);
+            indent(sb, indent + 1).append("[Then]").append('\n');
+            printStatement(ifs.thenBranch, sb, indent + 2);
+            if (ifs.elseBranch != null) {
+                indent(sb, indent + 1).append("[Else]").append('\n');
+                printStatement(ifs.elseBranch, sb, indent + 2);
+            }
+            return;
+        }
+        if (stmt instanceof Ast.WhileStatement) {
+            Ast.WhileStatement ws = (Ast.WhileStatement) stmt;
+            indent(sb, indent).append("[WhileStatement]").append('\n');
+            indent(sb, indent + 1).append("[Condition]").append('\n');
+            printExpression(ws.cond, sb, indent + 2);
+            indent(sb, indent + 1).append("[Body]").append('\n');
+            printStatement(ws.body, sb, indent + 2);
+            return;
+        }
+        if (stmt instanceof Ast.ReturnStatement) {
+            Ast.ReturnStatement rs = (Ast.ReturnStatement) stmt;
+            indent(sb, indent).append("[ReturnStatement]").append('\n');
+            if (rs.expr != null) {
+                printExpression(rs.expr, sb, indent + 1);
+            } else {
+                indent(sb, indent + 1).append("[void]").append('\n');
+            }
+            return;
+        }
+        if (stmt instanceof Ast.Block) {
+            indent(sb, indent).append("[Block]").append('\n');
+            for (Ast.Statement s : ((Ast.Block) stmt).statements) {
+                printStatement(s, sb, indent + 1);
+            }
+            return;
+        }
+        if (stmt instanceof Ast.MethodDeclaration) {
+            Ast.MethodDeclaration md = (Ast.MethodDeclaration) stmt;
+            indent(sb, indent).append("[MethodDeclaration]").append('\n');
+            indent(sb, indent + 1).append("[Name] ").append(md.name).append('\n');
+            indent(sb, indent + 1).append("[ReturnType] ").append(md.returnType).append('\n');
+            indent(sb, indent + 1).append("[Parameters]").append('\n');
+            for (Ast.Parameter p : md.parameters) {
+                indent(sb, indent + 2).append(p.type).append(" ").append(p.name).append('\n');
+            }
+            indent(sb, indent + 1).append("[Body]").append('\n');
+            printStatement(md.body, sb, indent + 2);
+            return;
+        }
+        if (stmt instanceof Ast.ClassDeclaration) {
+            Ast.ClassDeclaration cd = (Ast.ClassDeclaration) stmt;
+            indent(sb, indent).append("[ClassDeclaration] ").append(cd.name).append('\n');
+            for (Ast.Statement member : cd.members) {
+                printStatement(member, sb, indent + 1);
+            }
+            return;
+        }
+        if (stmt instanceof Ast.FieldDeclaration) {
+            Ast.FieldDeclaration fd = (Ast.FieldDeclaration) stmt;
+            indent(sb, indent).append("[FieldDeclaration]").append('\n');
+            indent(sb, indent + 1).append("[Type] ").append(fd.typeName).append('\n');
+            indent(sb, indent + 1).append("[Identifier] ").append(fd.name).append('\n');
+            if (fd.init != null) {
+                indent(sb, indent + 1).append("[Initializer]").append('\n');
+                printExpression(fd.init, sb, indent + 2);
+            }
+            return;
+        }
+        indent(sb, indent).append(stmt.getClass().getSimpleName()).append('\n');
+    }
+
+    private void printExpression(Ast.Expression expr, StringBuilder sb, int indent) {
         if (expr instanceof Ast.IntLiteral) {
-            return String.valueOf(((Ast.IntLiteral) expr).value);
+            indent(sb, indent).append("[IntLiteral] ").append(((Ast.IntLiteral) expr).value).append('\n');
+            return;
         }
         if (expr instanceof Ast.DoubleLiteral) {
-            return String.valueOf(((Ast.DoubleLiteral) expr).value);
+            indent(sb, indent).append("[DoubleLiteral] ").append(((Ast.DoubleLiteral) expr).value).append('\n');
+            return;
         }
         if (expr instanceof Ast.StringLiteral) {
-            return ((Ast.StringLiteral) expr).value;
+            indent(sb, indent).append("[StringLiteral] ").append(((Ast.StringLiteral) expr).value).append('\n');
+            return;
         }
         if (expr instanceof Ast.BooleanLiteral) {
-            return String.valueOf(((Ast.BooleanLiteral) expr).value);
+            indent(sb, indent).append("[BooleanLiteral] ").append(((Ast.BooleanLiteral) expr).value).append('\n');
+            return;
         }
         if (expr instanceof Ast.NullLiteral) {
-            return "null";
+            indent(sb, indent).append("[NullLiteral]").append('\n');
+            return;
         }
         if (expr instanceof Ast.Identifier) {
-            return ((Ast.Identifier) expr).name;
+            indent(sb, indent).append("[Identifier] ").append(((Ast.Identifier) expr).name).append('\n');
+            return;
         }
         if (expr instanceof Ast.Binary) {
             Ast.Binary b = (Ast.Binary) expr;
-            return String.format("(%s %s %s)", exprToString(b.left), b.op, exprToString(b.right));
+            indent(sb, indent).append("[BinaryExpression ").append(b.op).append("]").append('\n');
+            printExpression(b.left, sb, indent + 1);
+            printExpression(b.right, sb, indent + 1);
+            return;
         }
         if (expr instanceof Ast.Unary) {
             Ast.Unary u = (Ast.Unary) expr;
-            String op = u.op.equals("neg") ? "-" : u.op;
-            return String.format("(%s%s)", op, exprToString(u.expr));
+            indent(sb, indent).append("[UnaryExpression ").append(u.op).append("]").append('\n');
+            printExpression(u.expr, sb, indent + 1);
+            return;
         }
         if (expr instanceof Ast.Call) {
-            Ast.Call c = (Ast.Call) expr;
-            StringBuilder sb = new StringBuilder();
-            sb.append(exprToString(c.target)).append("(");
-            for (int i = 0; i < c.args.size(); i++) {
-                sb.append(exprToString(c.args.get(i)));
-                if (i < c.args.size() - 1) sb.append(", ");
+            Ast.Call call = (Ast.Call) expr;
+            indent(sb, indent).append("[Call]").append('\n');
+            indent(sb, indent + 1).append("[Target]").append('\n');
+            printExpression(call.target, sb, indent + 2);
+            indent(sb, indent + 1).append("[Args]").append('\n');
+            for (Ast.Expression arg : call.args) {
+                printExpression(arg, sb, indent + 2);
             }
-            sb.append(")");
-            return sb.toString();
+            return;
         }
         if (expr instanceof Ast.MemberAccess) {
             Ast.MemberAccess ma = (Ast.MemberAccess) expr;
-            return String.format("%s.%s", exprToString(ma.object), ma.memberName);
+            indent(sb, indent).append("[MemberAccess]").append('\n');
+            indent(sb, indent + 1).append("[Object]").append('\n');
+            printExpression(ma.object, sb, indent + 2);
+            indent(sb, indent + 1).append("[Member] ").append(ma.memberName).append('\n');
+            return;
         }
-        return expr.getClass().getSimpleName();
+        if (expr instanceof Ast.NewInstance) {
+            Ast.NewInstance ni = (Ast.NewInstance) expr;
+            indent(sb, indent).append("[NewInstance] ").append(ni.className).append('\n');
+            for (Ast.Expression arg : ni.args) {
+                printExpression(arg, sb, indent + 1);
+            }
+            return;
+        }
+        indent(sb, indent).append(expr.getClass().getSimpleName()).append('\n');
+    }
+
+    private StringBuilder indent(StringBuilder sb, int indent) {
+        for (int i = 0; i < indent; i++) {
+            sb.append("  ");
+        }
+        return sb;
     }
 
     @Override

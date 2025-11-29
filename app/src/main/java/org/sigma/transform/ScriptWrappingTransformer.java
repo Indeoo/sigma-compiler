@@ -21,10 +21,13 @@ public final class ScriptWrappingTransformer {
 
         List<Ast.Statement> classes = new ArrayList<>();
         List<Ast.Statement> scriptStatements = new ArrayList<>();
+        List<Ast.MethodDeclaration> scriptMethods = new ArrayList<>();
 
         for (Ast.Statement stmt : unit.statements) {
             if (stmt instanceof Ast.ClassDeclaration) {
                 classes.add(stmt);
+            } else if (stmt instanceof Ast.MethodDeclaration) {
+                scriptMethods.add((Ast.MethodDeclaration) stmt);
             } else {
                 scriptStatements.add(stmt);
             }
@@ -46,6 +49,7 @@ public final class ScriptWrappingTransformer {
 
         List<Ast.Statement> members = new ArrayList<>();
         members.add(scriptMethod);
+        members.addAll(scriptMethods);
         Ast.ClassDeclaration scriptClass = new Ast.ClassDeclaration(
             SCRIPT_CLASS_NAME,
             members,
