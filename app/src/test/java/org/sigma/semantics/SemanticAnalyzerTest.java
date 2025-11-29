@@ -494,4 +494,36 @@ public class SemanticAnalyzerTest {
         assertNotNull(pointClass);
         assertTrue(pointClass.isClass());
     }
+
+    @Test
+    void testInstanceMethodCanReadField() {
+        SemanticAnalyzer analyzer = new SemanticAnalyzer();
+
+        Ast.FieldDeclaration field = new Ast.FieldDeclaration("double", "pi", null, 0, 0);
+        Ast.Identifier piRef = new Ast.Identifier("pi", 1, 0);
+        Ast.Parameter radiusParam = new Ast.Parameter("double", "radius", 0, 0);
+        Ast.Binary bodyExpr = new Ast.Binary("*", piRef, new Ast.Identifier("radius", 1, 2), 1, 0);
+        Ast.ReturnStatement returnStatement = new Ast.ReturnStatement(bodyExpr, 1, 0);
+        Ast.Block body = new Ast.Block(List.of(returnStatement));
+        Ast.MethodDeclaration method = new Ast.MethodDeclaration(
+            "double",
+            "circleArea",
+            List.of(radiusParam),
+            body,
+            0, 0
+        );
+
+        Ast.ClassDeclaration calculator = new Ast.ClassDeclaration(
+            "Calculator",
+            List.of(field, method),
+            0, 0
+        );
+
+        Ast.CompilationUnit ast = new Ast.CompilationUnit(List.of(calculator));
+
+        SemanticResult result = analyzer.analyze(ast);
+        assertTrue(result.isSuccessful(), () -> "Semantic errors: " + result.getErrorCount());
+        SigmaType identifierType = result.getExpressionType(piRef);
+        assertEquals(TypeRegistry.DOUBLE, identifierType);
+    }
 }

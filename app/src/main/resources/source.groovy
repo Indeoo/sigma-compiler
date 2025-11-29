@@ -17,9 +17,10 @@ int negated = -a;
 boolean inverted = !flag1;
 
 class Calculator {
+    double pi = 3.14159;
 
     double circleArea(double radius) {
-        return 3.14159 * radius * radius;
+        return pi * radius * radius;
     }
 }
 

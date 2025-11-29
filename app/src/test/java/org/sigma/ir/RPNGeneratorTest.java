@@ -233,6 +233,44 @@ public class RPNGeneratorTest {
     }
 
     @Test
+    public void testMethodReadsInstanceField() {
+        Ast.FieldDeclaration field = new Ast.FieldDeclaration("double", "pi", null, 0, 0);
+        Ast.Identifier piRef = new Ast.Identifier("pi", 1, 0);
+        Ast.Block body = new Ast.Block(List.of(new Ast.ReturnStatement(piRef, 1, 0)));
+        Ast.MethodDeclaration method = new Ast.MethodDeclaration(
+            "double",
+            "value",
+            List.of(),
+            body,
+            0, 0
+        );
+        Ast.ClassDeclaration classDecl = new Ast.ClassDeclaration("Calculator", List.of(field, method), 0, 0);
+        Ast.CompilationUnit ast = new Ast.CompilationUnit(List.of(classDecl));
+
+        SemanticResult semanticResult = new SemanticAnalyzer().analyze(ast);
+        assertTrue(semanticResult.isSuccessful(), semanticResult::getErrorsAsString);
+
+        RPNGenerator generator = new RPNGenerator(semanticResult);
+        RPNProgram program = generator.generate(ast);
+
+        List<RPNInstruction> instructions = program.getInstructions();
+        boolean foundSequence = false;
+        for (int i = 0; i < instructions.size() - 1; i++) {
+            RPNInstruction load = instructions.get(i);
+            RPNInstruction next = instructions.get(i + 1);
+            if (load.getOpcode() == RPNOpcode.LOAD &&
+                "this".equals(load.getOperand()) &&
+                next.getOpcode() == RPNOpcode.GET_FIELD &&
+                "pi".equals(next.getOperand())) {
+                assertEquals(0, load.getSlotIndex(), "this should be stored in slot 0");
+                foundSequence = true;
+                break;
+            }
+        }
+        assertTrue(foundSequence, "Expected the method to load 'this' and access field 'pi'");
+    }
+
+    @Test
     public void testProgramVisualization() {
         // int x = 5 + 3;
         Ast.IntLiteral left = new Ast.IntLiteral(5, 1, 0);

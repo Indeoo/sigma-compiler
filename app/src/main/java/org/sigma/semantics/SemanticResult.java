@@ -16,6 +16,8 @@ public class SemanticResult {
     private final SymbolTable symbolTable;
     private final List<SemanticError> errors;
     private final Map<Ast.Expression, SigmaType> expressionTypes;
+    private final Map<Ast.Expression, Symbol> resolvedSymbols;
+    private final Map<String, ClassInfo> classInfos;
 
     /**
      * Create a semantic analysis result
@@ -28,11 +30,15 @@ public class SemanticResult {
     public SemanticResult(Ast.CompilationUnit ast,
                          SymbolTable symbolTable,
                          List<SemanticError> errors,
-                         Map<Ast.Expression, SigmaType> expressionTypes) {
+                         Map<Ast.Expression, SigmaType> expressionTypes,
+                         Map<Ast.Expression, Symbol> resolvedSymbols,
+                         Map<String, ClassInfo> classInfos) {
         this.ast = ast;
         this.symbolTable = symbolTable;
         this.errors = new ArrayList<>(errors);
         this.expressionTypes = new HashMap<>(expressionTypes);
+        this.resolvedSymbols = new HashMap<>(resolvedSymbols);
+        this.classInfos = new HashMap<>(classInfos);
     }
 
     /**
@@ -82,6 +88,20 @@ public class SemanticResult {
      */
     public Map<Ast.Expression, SigmaType> getExpressionTypes() {
         return new HashMap<>(expressionTypes);
+    }
+
+    /**
+     * Get resolved symbols for identifier/member expressions.
+     */
+    public Map<Ast.Expression, Symbol> getResolvedSymbols() {
+        return new HashMap<>(resolvedSymbols);
+    }
+
+    /**
+     * Get class metadata captured during semantic analysis.
+     */
+    public Map<String, ClassInfo> getClassInfos() {
+        return new HashMap<>(classInfos);
     }
 
     /**

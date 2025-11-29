@@ -20,9 +20,12 @@ public class SemanticAnalyzer {
     private final TypeRegistry typeRegistry;
     private final List<SemanticError> errors;
     private final Map<Ast.Expression, SigmaType> expressionTypes;
+    private final Map<Ast.Expression, Symbol> resolvedSymbols;
+    private final Map<String, ClassInfo> classInfos;
 
     // Track current method's return type for return statement checking
     private SigmaType currentMethodReturnType;
+    private ClassInfo currentClassInfo;
 
     /**
      * Create a new semantic analyzer
@@ -32,7 +35,10 @@ public class SemanticAnalyzer {
         this.typeRegistry = new TypeRegistry();
         this.errors = new ArrayList<>();
         this.expressionTypes = new HashMap<>();
+        this.resolvedSymbols = new HashMap<>();
+        this.classInfos = new HashMap<>();
         this.currentMethodReturnType = null;
+        this.currentClassInfo = null;
     }
 
     /**
@@ -59,6 +65,9 @@ public class SemanticAnalyzer {
     public SemanticResult analyze(Ast.CompilationUnit ast) {
         errors.clear();
         expressionTypes.clear();
+        resolvedSymbols.clear();
+        classInfos.clear();
+        currentClassInfo = null;
 
         // Pass 1: Collect declarations (classes, methods, global variables)
         collectDeclarations(ast);
@@ -66,7 +75,7 @@ public class SemanticAnalyzer {
         // Pass 2: Type checking and name resolution
         checkSemantics(ast);
 
-        return new SemanticResult(ast, symbolTable, errors, expressionTypes);
+        return new SemanticResult(ast, symbolTable, errors, expressionTypes, resolvedSymbols, classInfos);
     }
 
     // ==================== PASS 1: DECLARATION COLLECTION ====================
@@ -101,12 +110,18 @@ public class SemanticAnalyzer {
             convertSymbolTableErrors(classDecl.line, classDecl.col);
         }
 
+        ClassInfo classInfo = null;
+        if (classType instanceof SigmaType.ClassType) {
+            classInfo = new ClassInfo(classDecl.name, (SigmaType.ClassType) classType);
+            classInfos.put(classDecl.name, classInfo);
+        }
+
         // Enter class scope and collect members
         symbolTable.enterScope(Scope.ScopeType.CLASS);
 
         for (Ast.Statement member : classDecl.members) {
             if (member instanceof Ast.MethodDeclaration) {
-                collectMethodDeclaration((Ast.MethodDeclaration) member);
+                collectMethodDeclaration((Ast.MethodDeclaration) member, classInfo);
             } else if (member instanceof Ast.VariableDeclaration) {
                 // Field declaration
                 Ast.VariableDeclaration field = (Ast.VariableDeclaration) member;
@@ -115,6 +130,9 @@ public class SemanticAnalyzer {
                                        field.line, field.col)) {
                     convertSymbolTableErrors(field.line, field.col);
                 }
+                if (classInfo != null) {
+                    classInfo.addField(field.name, fieldType, field.line, field.col);
+                }
             } else if (member instanceof Ast.FieldDeclaration) {
                 // Explicit field declaration
                 Ast.FieldDeclaration field = (Ast.FieldDeclaration) member;
@@ -122,6 +140,9 @@ public class SemanticAnalyzer {
                 if (!symbolTable.define(field.name, fieldType, Symbol.SymbolKind.FIELD,
                                        field.line, field.col)) {
                     convertSymbolTableErrors(field.line, field.col);
+                }
+                if (classInfo != null) {
+                    classInfo.addField(field.name, fieldType, field.line, field.col);
                 }
             }
         }
@@ -133,6 +154,10 @@ public class SemanticAnalyzer {
      * Collect a method declaration
      */
     private void collectMethodDeclaration(Ast.MethodDeclaration methodDecl) {
+        collectMethodDeclaration(methodDecl, null);
+    }
+
+    private void collectMethodDeclaration(Ast.MethodDeclaration methodDecl, ClassInfo owningClass) {
         // Resolve return type
         SigmaType returnType = typeRegistry.resolve(methodDecl.returnType);
 
@@ -141,6 +166,15 @@ public class SemanticAnalyzer {
         if (!symbolTable.define(methodDecl.name, returnType, Symbol.SymbolKind.METHOD,
                                methodDecl.line, methodDecl.col)) {
             convertSymbolTableErrors(methodDecl.line, methodDecl.col);
+        }
+
+        if (owningClass != null && returnType != TypeRegistry.ERROR) {
+            List<SigmaType> parameterTypes = new ArrayList<>();
+            for (Ast.Parameter parameter : methodDecl.parameters) {
+                parameterTypes.add(typeRegistry.resolve(parameter.type));
+            }
+            owningClass.addMethod(methodDecl.name, returnType, parameterTypes,
+                                  methodDecl.line, methodDecl.col);
         }
     }
 
@@ -383,6 +417,8 @@ public class SemanticAnalyzer {
      * Check class declaration
      */
     private void checkClassDeclaration(Ast.ClassDeclaration classDecl) {
+        ClassInfo previousClass = currentClassInfo;
+        currentClassInfo = classInfos.get(classDecl.name);
         // Enter class scope
         symbolTable.enterScope(Scope.ScopeType.CLASS);
 
@@ -409,6 +445,7 @@ public class SemanticAnalyzer {
         }
 
         symbolTable.exitScope();
+        currentClassInfo = previousClass;
     }
 
     // ==================== EXPRESSION TYPE INFERENCE ====================
@@ -455,6 +492,9 @@ public class SemanticAnalyzer {
      */
     private SigmaType inferIdentifierType(Ast.Identifier id) {
         Symbol symbol = symbolTable.lookup(id.name);
+        if (symbol == null && currentClassInfo != null) {
+            symbol = currentClassInfo.getField(id.name);
+        }
         if (symbol == null) {
             errors.add(new SemanticError(
                 SemanticError.SemanticErrorType.UNDEFINED_VARIABLE,
@@ -463,6 +503,7 @@ public class SemanticAnalyzer {
             ));
             return TypeRegistry.ERROR;
         }
+        resolvedSymbols.put(id, symbol);
         return symbol.getType();
     }
 
@@ -590,13 +631,68 @@ public class SemanticAnalyzer {
             // Return the method's return type
             return symbol.getType();
         } else if (call.target instanceof Ast.MemberAccess) {
-            // Method call on object
-            inferExpressionType(call.target);
-            // For now, return ERROR (would need class member lookup)
-            return TypeRegistry.ERROR;
+            return inferMemberCallType((Ast.MemberAccess) call.target, call);
         }
 
         return TypeRegistry.ERROR;
+    }
+
+    private SigmaType inferMemberCallType(Ast.MemberAccess memberAccess, Ast.Call call) {
+        SigmaType objectType = inferExpressionType(memberAccess.object);
+        if (!(objectType instanceof SigmaType.ClassType)) {
+            errors.add(new SemanticError(
+                SemanticError.SemanticErrorType.INVALID_MEMBER_ACCESS,
+                "Cannot call member on non-class type: " + objectType,
+                memberAccess.line, memberAccess.col
+            ));
+            return TypeRegistry.ERROR;
+        }
+
+        ClassInfo classInfo = classInfos.get(objectType.getName());
+        if (classInfo == null) {
+            errors.add(new SemanticError(
+                SemanticError.SemanticErrorType.UNDEFINED_CLASS,
+                "Undefined class: " + objectType.getName(),
+                memberAccess.line, memberAccess.col
+            ));
+            return TypeRegistry.ERROR;
+        }
+
+        ClassInfo.MethodInfo methodInfo = classInfo.getMethod(memberAccess.memberName);
+        if (methodInfo == null) {
+            errors.add(new SemanticError(
+                SemanticError.SemanticErrorType.UNDEFINED_METHOD,
+                String.format("Class %s has no method %s", classInfo.getName(), memberAccess.memberName),
+                memberAccess.line, memberAccess.col
+            ));
+            return TypeRegistry.ERROR;
+        }
+
+        if (call.args.size() != methodInfo.getParameterCount()) {
+            errors.add(new SemanticError(
+                SemanticError.SemanticErrorType.INVALID_CALL,
+                String.format("Method %s expects %d arguments but got %d",
+                              methodInfo.getName(),
+                              methodInfo.getParameterCount(),
+                              call.args.size()),
+                call.line, call.col
+            ));
+        }
+
+        for (int i = 0; i < call.args.size() && i < methodInfo.getParameterCount(); i++) {
+            SigmaType argType = inferExpressionType(call.args.get(i));
+            SigmaType paramType = methodInfo.getParameterTypes().get(i);
+            if (!argType.isCompatibleWith(paramType)) {
+                errors.add(new SemanticError(
+                    SemanticError.SemanticErrorType.TYPE_MISMATCH,
+                    String.format("Argument %d type %s is not assignable to %s",
+                                  i + 1, argType, paramType),
+                    call.line, call.col
+                ));
+            }
+        }
+
+        return methodInfo.getReturnType();
     }
 
     /**
@@ -605,17 +701,45 @@ public class SemanticAnalyzer {
     private SigmaType inferMemberAccessType(Ast.MemberAccess memberAccess) {
         SigmaType objectType = inferExpressionType(memberAccess.object);
 
-        // For now, just return ERROR
-        // TODO: Implement class member lookup
         if (!objectType.isReference()) {
             errors.add(new SemanticError(
                 SemanticError.SemanticErrorType.INVALID_MEMBER_ACCESS,
                 "Cannot access member on non-class type: " + objectType,
                 memberAccess.line, memberAccess.col
             ));
+            return TypeRegistry.ERROR;
         }
 
-        return TypeRegistry.ERROR;
+        ClassInfo classInfo = classInfos.get(objectType.getName());
+        if (classInfo == null) {
+            errors.add(new SemanticError(
+                SemanticError.SemanticErrorType.UNDEFINED_CLASS,
+                "Undefined class: " + objectType.getName(),
+                memberAccess.line, memberAccess.col
+            ));
+            return TypeRegistry.ERROR;
+        }
+
+        Symbol fieldSymbol = classInfo.getField(memberAccess.memberName);
+        if (fieldSymbol == null) {
+            if (classInfo.getMethod(memberAccess.memberName) != null) {
+                errors.add(new SemanticError(
+                    SemanticError.SemanticErrorType.INVALID_MEMBER_ACCESS,
+                    "Method reference is not supported in expressions: " + memberAccess.memberName,
+                    memberAccess.line, memberAccess.col
+                ));
+            } else {
+                errors.add(new SemanticError(
+                    SemanticError.SemanticErrorType.UNDEFINED_FIELD,
+                    String.format("Class %s has no field %s", classInfo.getName(), memberAccess.memberName),
+                    memberAccess.line, memberAccess.col
+                ));
+            }
+            return TypeRegistry.ERROR;
+        }
+
+        resolvedSymbols.put(memberAccess, fieldSymbol);
+        return fieldSymbol.getType();
     }
 
     /**
