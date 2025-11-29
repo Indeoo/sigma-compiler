@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><!--Created with JFLAP 7.1.--><structure>
+<type>fa</type>
+<automaton>
+	<!--The list of states.-->
+	<state id="0" name="START">
+		<x>50.0</x>
+		<y>50.0</y>
+		<initial/>
+	</state>
+	<state id="1" name="IDENTIFIER">
+		<x>420.0</x>
+		<y>-8.0</y>
+		<final/>
+	</state>
+	<state id="2" name="INTEGER">
+		<x>200.0</x>
+		<y>80.0</y>
+		<final/>
+	</state>
+	<state id="3" name="FLOAT_DOT">
+		<x>350.0</x>
+		<y>80.0</y>
+	</state>
+	<state id="4" name="FLOAT">
+		<x>500.0</x>
+		<y>80.0</y>
+		<final/>
+	</state>
+	<state id="5" name="STRING_BODY">
+		<x>600.0</x>
+		<y>44.0</y>
+	</state>
+	<state id="6" name="STRING_ESCAPE">
+		<x>800.0</x>
+		<y>125.0</y>
+	</state>
+	<state id="7" name="STRING_END">
+		<x>757.0</x>
+		<y>11.0</y>
+		<final/>
+	</state>
+	<state id="8" name="WHITESPACE">
+		<x>211.0</x>
+		<y>285.0</y>
+		<final/>
+	</state>
+	<state id="9" name="SLASH_OR_DIV">
+		<x>104.0</x>
+		<y>484.0</y>
+		<final/>
+	</state>
+	<state id="10" name="LINE_COMMENT">
+		<x>320.0</x>
+		<y>461.0</y>
+		<final/>
+	</state>
+	<state id="11" name="BLOCK_COMMENT_BODY">
+		<x>332.0</x>
+		<y>559.0</y>
+	</state>
+	<state id="12" name="BLOCK_COMMENT_STAR">
+		<x>547.0</x>
+		<y>559.0</y>
+	</state>
+	<state id="13" name="BLOCK_COMMENT_END">
+		<x>681.0</x>
+		<y>573.0</y>
+		<final/>
+	</state>
+	<state id="14" name="SINGLE_SYMBOL">
+		<x>134.0</x>
+		<y>308.0</y>
+		<final/>
+	</state>
+	<state id="15" name="LESS_THAN_OR_EQUAL1">
+		<x>371.0</x>
+		<y>366.0</y>
+		<final/>
+	</state>
+	<state id="16" name="LESS_EQUAL">
+		<x>469.0</x>
+		<y>366.0</y>
+		<final/>
+	</state>
+	<state id="17" name="GREATER_THAN_OR_EQUAL1">
+		<x>545.0</x>
+		<y>377.0</y>
+		<final/>
+	</state>
+	<state id="18" name="GREATER_EQUAL">
+		<x>614.0</x>
+		<y>380.0</y>
+		<final/>
+	</state>
+	<state id="19" name="ASSIGN_OR_EQ1">
+		<x>679.0</x>
+		<y>381.0</y>
+		<final/>
+	</state>
+	<state id="20" name="EQUAL_EQUAL">
+		<x>740.0</x>
+		<y>380.0</y>
+		<final/>
+	</state>
+	<state id="21" name="NOT">
+		<x>800.0</x>
+		<y>380.0</y>
+		<final/>
+	</state>
+	<state id="22" name="NOT_EQUAL">
+		<x>860.0</x>
+		<y>380.0</y>
+		<final/>
+	</state>
+	<state id="23" name="AND_FIRST">
+		<x>920.0</x>
+		<y>380.0</y>
+	</state>
+	<state id="24" name="AND">
+		<x>980.0</x>
+		<y>380.0</y>
+		<final/>
+	</state>
+	<state id="25" name="OR_FIRST">
+		<x>1040.0</x>
+		<y>380.0</y>
+	</state>
+	<state id="26" name="OR">
+		<x>1100.0</x>
+		<y>380.0</y>
+		<final/>
+	</state>
+	<!-- POWER ("**") -->
+	<state id="27" name="POWER_FIRST_STAR">
+		<x>200.0</x>
+		<y>360.0</y>
+	</state>
+	<state id="28" name="POWER">
+		<x>260.0</x>
+		<y>360.0</y>
+		<final/>
+	</state>
+	<!-- NEGATIVE SIGN prefix for numbers -->
+	<state id="29" name="NEGATIVE_SIGN">
+		<x>200.0</x>
+		<y>150.0</y>
+	</state>
+
+	<!--The list of transitions.-->
+	<transition>
+		<from>12</from>
+		<to>13</to>
+		<read>/</read>
+	</transition>
+	<transition>
+		<from>1</from>
+		<to>1</to>
+		<read>LETTER</read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>23</to>
+		<read>&amp;</read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>25</to>
+		<read>|</read>
+	</transition>
+	<transition>
+		<from>21</from>
+		<to>22</to>
+		<read>=</read>
+	</transition>
+	<transition>
+		<from>8</from>
+		<to>8</to>
+		<read>	</read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>1</to>
+		<read>LETTER</read>
+	</transition>
+	<transition>
+		<from>5</from>
+		<to>5</to>
+		<read>STR_CHAR</read>
+	</transition>
+	<transition>
+		<from>10</from>
+		<to>10</to>
+		<read>LC_CHAR</read>
+	</transition>
+
+	<!-- positive integer -->
+	<transition>
+		<from>0</from>
+		<to>2</to>
+		<read>DIGIT</read>
+	</transition>
+
+	<!-- negative sign first -->
+	<transition>
+		<from>0</from>
+		<to>29</to>
+		<read>-</read>
+	</transition>
+	<!-- negative int: "-" DIGIT... -->
+	<transition>
+		<from>29</from>
+		<to>2</to>
+		<read>DIGIT</read>
+	</transition>
+
+	<!-- block comment open "/*" -->
+	<transition>
+		<from>9</from>
+		<to>11</to>
+		<read>*</read>
+	</transition>
+
+	<transition>
+		<from>8</from>
+		<to>8</to>
+		<read> </read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>21</to>
+		<read>!</read>
+	</transition>
+	<transition>
+		<from>12</from>
+		<to>12</to>
+		<read>*</read>
+	</transition>
+	<transition>
+		<from>19</from>
+		<to>20</to>
+		<read>=</read>
+	</transition>
+	<transition>
+		<from>5</from>
+		<to>6</to>
+		<read>\</read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>17</to>
+		<read>&gt;</read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>14</to>
+		<read>}</read>
+	</transition>
+
+	<!-- float after digits and "." -->
+	<transition>
+		<from>3</from>
+		<to>4</to>
+		<read>DIGIT</read>
+	</transition>
+
+	<transition>
+		<from>0</from>
+		<to>14</to>
+		<read>{</read>
+	</transition>
+
+	<!-- INTEGER "." -> FLOAT_DOT -->
+	<transition>
+		<from>2</from>
+		<to>3</to>
+		<read>.</read>
+	</transition>
+
+	<!-- negative float with leading "." : "-." -->
+	<transition>
+		<from>29</from>
+		<to>3</to>
+		<read>.</read>
+	</transition>
+
+	<transition>
+		<from>12</from>
+		<to>11</to>
+		<read>BC_NOT_STAR</read>
+	</transition>
+	<transition>
+		<from>5</from>
+		<to>7</to>
+		<read>"</read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>9</to>
+		<read>/</read>
+	</transition>
+	<transition>
+		<from>23</from>
+		<to>24</to>
+		<read>&amp;</read>
+	</transition>
+	<transition>
+		<from>9</from>
+		<to>10</to>
+		<read>/</read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>15</to>
+		<read>&lt;</read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>5</to>
+		<read>"</read>
+	</transition>
+	<transition>
+		<from>17</from>
+		<to>18</to>
+		<read>=</read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>19</to>
+		<read>=</read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>8</to>
+		<read> </read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>1</to>
+		<read>_</read>
+	</transition>
+	<transition>
+		<from>15</from>
+		<to>16</to>
+		<read>=</read>
+	</transition>
+	<transition>
+		<from>25</from>
+		<to>26</to>
+		<read>|</read>
+	</transition>
+	<transition>
+		<from>1</from>
+		<to>1</to>
+		<read>_</read>
+	</transition>
+
+	<!-- single-char symbols except "-" now -->
+	<transition>
+		<from>0</from>
+		<to>14</to>
+		<read>.</read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>14</to>
+		<read>,</read>
+	</transition>
+
+	<!-- "*" can be either operator or start of "**" -->
+	<transition>
+		<from>0</from>
+		<to>14</to>
+		<read>*</read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>27</to>
+		<read>*</read>
+	</transition>
+	<transition>
+		<from>27</from>
+		<to>28</to>
+		<read>*</read>
+	</transition>
+
+	<transition>
+		<from>0</from>
+		<to>14</to>
+		<read>+</read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>14</to>
+		<read>(</read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>14</to>
+		<read>)</read>
+	</transition>
+	<transition>
+		<from>6</from>
+		<to>5</to>
+		<read>ESC_CHAR</read>
+	</transition>
+	<transition>
+		<from>11</from>
+		<to>11</to>
+		<read>BC_NOT_STAR</read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>14</to>
+		<read>%</read>
+	</transition>
+	<transition>
+		<from>1</from>
+		<to>1</to>
+		<read>DIGIT</read>
+	</transition>
+	<transition>
+		<from>2</from>
+		<to>2</to>
+		<read>DIGIT</read>
+	</transition>
+	<transition>
+		<from>4</from>
+		<to>4</to>
+		<read>DIGIT</read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>14</to>
+		<read>;</read>
+	</transition>
+	<transition>
+		<from>11</from>
+		<to>12</to>
+		<read>*</read>
+	</transition>
+	<transition>
+		<from>0</from>
+		<to>8</to>
+		<read>	</read>
+	</transition>
+</automaton>
+</structure>

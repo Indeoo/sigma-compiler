@@ -21,6 +21,8 @@ dependencies {
     // ANTLR: enable generation and runtime for the lexer/parser
     antlr 'org.antlr:antlr4:4.13.1'
     implementation 'org.antlr:antlr4-runtime:4.13.1'
+    // ANTLR tool for grammar-driven parser (loads Grammar at runtime)
+    implementation 'org.antlr:antlr4:4.13.1'
 
     // ASM library for bytecode generation
     implementation 'org.ow2.asm:asm:9.6'
@@ -41,6 +43,10 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+        showStandardStreams = true
+    }
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
@@ -53,15 +59,28 @@ java {
 // Ensure ANTLR-generated sources are compiled with the main Java sources
 sourceSets.main.java.srcDirs += file("$buildDir/generated-src/antlr/main")
 
+// Configure ANTLR to generate visitors (needed for AST conversion)
+generateGrammarSource {
+    arguments += ["-visitor", "-no-listener"]
+}
+
 tasks.named('compileJava') {
     dependsOn tasks.named('generateGrammarSource')
+}
+
+// Task to run the grammar parser demo
+task runGrammarDemo(type: JavaExec) {
+    group = 'application'
+    description = 'Runs the Grammar Parser Demo'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'org.sigma.GrammarParserDemo'
 }
 
 // ANTLR removed — no grammar generation
 
 application {
     // Define the main class for the application.
-    mainClass = 'org.example.CompilerApp'
+    mainClass = 'org.sigma.CompilerApp'
 }
 
 // Simple JavaExec task to run a small RD regression runner (does not depend on test sources)
@@ -80,4 +99,18 @@ task runLexerDemo(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     // default to syntax_error_tests.sigma in project root
     args = [project.rootDir.toString() + '/syntax_error_tests.sigma']
+}
+
+task runTestParser(type: JavaExec) {
+    group = 'verification'
+    description = 'Test ANTLR parser integration'
+    mainClass = 'org.sigma.TestParser'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+task runAstPrinter(type: JavaExec) {
+    group = 'verification'
+    description = 'Print readable AST for test cases'
+    mainClass = 'org.sigma.TestAstPrinter'
+    classpath = sourceSets.main.runtimeClasspath
 }

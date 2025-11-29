@@ -97,7 +97,7 @@ relationalExpression
     ;
 
 additiveExpression
-    : multiplicativeExpression (ADDITIVE multiplicativeExpression)*
+    : multiplicativeExpression ((PLUS | MINUS) multiplicativeExpression)*
     ;
 
 multiplicativeExpression
@@ -168,13 +168,12 @@ VOID : 'void' ;
 // POWER uses '**' only. '^' is intentionally omitted because it has different semantics in some hosts (e.g. Scala).
 POWER : '**' ;
 MULTIPLICATIVE : '*' | '/' | '%' ;
-ADDITIVE : '+' | '-' ;
 RELATIONAL : '<' | '<=' | '>' | '>=' | '==' | '!=' ;
 LOGICAL : '&&' | '||' ;
 NOT : '!' ;
 ASSIGN : '=' ;
 
-// Individual operators (for unary operations)
+// Individual operators (for unary and binary operations)
 MINUS : '-' ;
 PLUS : '+' ;
 
