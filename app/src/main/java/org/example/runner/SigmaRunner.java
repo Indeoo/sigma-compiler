@@ -60,12 +60,15 @@ public class SigmaRunner {
             }
 
             // Print disassembly via ASM TraceClassVisitor for debugging
+            // Disabled by default; enable with -Dsigma.disasm=true
             try {
-                org.objectweb.asm.ClassReader cr = new org.objectweb.asm.ClassReader(bytecode);
-                java.io.PrintWriter pw = new java.io.PrintWriter(System.out);
-                org.objectweb.asm.util.TraceClassVisitor tcv = new org.objectweb.asm.util.TraceClassVisitor(pw);
-                cr.accept(tcv, 0);
-                pw.flush();
+                if (Boolean.getBoolean("sigma.disasm")) {
+                    org.objectweb.asm.ClassReader cr = new org.objectweb.asm.ClassReader(bytecode);
+                    java.io.PrintWriter pw = new java.io.PrintWriter(System.out);
+                    org.objectweb.asm.util.TraceClassVisitor tcv = new org.objectweb.asm.util.TraceClassVisitor(pw);
+                    cr.accept(tcv, 0);
+                    pw.flush();
+                }
             } catch (Exception e) {
                 System.err.println("Warning: failed to disassemble bytecode: " + e.getMessage());
             }

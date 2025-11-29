@@ -1,10 +1,11 @@
 package org.example;
 
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.example.codegen.SigmaCodeGenerator;
-import org.example.lexer.SigmaLexerWrapper;
-import org.example.parser.*;
+import org.example.codegen.SigmaCodeGeneratorRD;
+import org.example.lexer.*;
+import org.example.parser.RecursiveDescentParser;
+import org.example.semantic.RDSemanticAnalyzer;
 import org.example.semantic.*;
+import org.example.ast.Ast;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,14 +18,10 @@ import java.util.List;
  */
 public class SigmaCompiler {
 
-    private final SigmaParserWrapper parser;
-    private final SigmaSemanticAnalyzer semanticAnalyzer;
-    private final SigmaLexerWrapper sigmaLexerWrapper;
+    private final RDSemanticAnalyzer semanticAnalyzer;
 
     public SigmaCompiler() {
-        this.parser = new SigmaParserWrapper();
-        this.semanticAnalyzer = new SigmaSemanticAnalyzer();
-        this.sigmaLexerWrapper = new SigmaLexerWrapper();
+        this.semanticAnalyzer = new RDSemanticAnalyzer();
     }
 
     /**
@@ -46,33 +43,41 @@ public class SigmaCompiler {
      */
     public CompilationResult compile(String sourceCode, String className) {
         try {
-            // Step 0: Lexical analysis
-            CommonTokenStream tokens = this.sigmaLexerWrapper.createLexerTable(sourceCode);
-
-            // Step 1: Parsing (syntax analysis)
-            ParseResult parseResult = parser.parse(tokens);
-            if (!parseResult.isSuccessful()) {
-                return CompilationResult.parseFailure(parseResult);
+            // Step 1: Parse to RD AST
+            RecursiveDescentParser.ParseAstResult rd = RecursiveDescentParser.parseToAst(sourceCode);
+            if (rd.errors != null && !rd.errors.isEmpty()) {
+                // Separate non-fatal tokenization hints (suggestions) from real parse errors
+                java.util.List<String> hints = new java.util.ArrayList<>();
+                java.util.List<String> real = new java.util.ArrayList<>();
+                for (String m : rd.errors) {
+                    if (m != null && m.contains("Did you mean")) hints.add(m);
+                    else real.add(m);
+                }
+                if (!real.isEmpty()) {
+                    // wrap parse errors into ParseResult and return failure
+                    org.example.parser.ParseResult pr = org.example.parser.ParseResult.failure(real);
+                    return CompilationResult.parseFailure(pr);
+                } else {
+                    // only hints/warnings; print them to stderr and continue
+                    for (String w : hints) System.err.println("Warning: " + w);
+                }
             }
 
-            // Step 2: Semantic analysis
-            SemanticResult semanticResult = semanticAnalyzer.analyze(parseResult.getParseTree());
+            // Step 2: Semantic analysis (RD)
+            SemanticResult semanticResult = semanticAnalyzer.analyze(rd.ast);
             if (!semanticResult.isSuccessful()) {
-                return CompilationResult.semanticFailure(parseResult, semanticResult);
+                return CompilationResult.semanticFailure(null, semanticResult);
             }
 
-            // Step 3: Code generation
-            SigmaCodeGenerator codeGenerator = new SigmaCodeGenerator(
-                semanticResult.getSymbolTable(), className);
-            byte[] bytecode = codeGenerator.generateBytecode(parseResult.getParseTree());
-
+            // Step 3: Code generation (RD)
+            SigmaCodeGeneratorRD codeGenerator = new SigmaCodeGeneratorRD(semanticResult.getSymbolTable(), className);
+            byte[] bytecode = codeGenerator.generateBytecode(rd.ast);
             if (!codeGenerator.isSuccessful()) {
-                return CompilationResult.codeGenerationFailure(parseResult, semanticResult,
-                                                             codeGenerator.getErrors());
+                return CompilationResult.codeGenerationFailure(null, semanticResult, codeGenerator.getErrors());
             }
 
-            // Compilation successful - return bytecode
-            return CompilationResult.success(parseResult, semanticResult, bytecode, className);
+            // Build successful CompilationResult using null ParseResult (we used RD parser)
+            return CompilationResult.success(null, semanticResult, bytecode, className);
 
         } catch (Exception e) {
             List<String> codeGenErrors = List.of("Compilation error: " + e.getMessage());
@@ -104,18 +109,6 @@ public class SigmaCompiler {
     }
 
 
-    /**
-     * Get the parser instance (for testing)
-     */
-    public SigmaParserWrapper getParser() {
-        return parser;
-    }
-
-    /**
-     * Get the semantic analyzer instance (for testing)
-     */
-    public SigmaSemanticAnalyzer getSemanticAnalyzer() {
-        return semanticAnalyzer;
-    }
+    // Parser and semantic analyzer accessors removed (ANTLR replaced by RD pipeline)
 
 }

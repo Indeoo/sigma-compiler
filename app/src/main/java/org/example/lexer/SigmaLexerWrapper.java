@@ -4,28 +4,34 @@ import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Vocabulary;
-import org.example.error.SigmaErrorListener;
+import org.example.parser.SigmaLexer;
 
-import static org.example.parser.SigmaLexer.VOCABULARY;
-
+/**
+ * Small wrapper around the ANTLR-generated SigmaLexer to provide a
+ * compatible API for the tests and demo. The wrapper constructs a
+ * lexer from a string and returns a populated CommonTokenStream.
+ */
 public class SigmaLexerWrapper {
 
-    public Vocabulary getVocabulary() {
-        return VOCABULARY;
+    /**
+     * Create a CommonTokenStream filled from the provided source string.
+     * The stream will contain tokens produced by the generated SigmaLexer.
+     */
+    public CommonTokenStream createLexerTable(String source) {
+        CharStream cs = CharStreams.fromString(source == null ? "" : source);
+        SigmaLexer lexer = new SigmaLexer(cs);
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        tokens.fill();
+        return tokens;
     }
 
-    public CommonTokenStream createLexerTable(String sourceCode) {
-        CharStream input = CharStreams.fromString(sourceCode);
-
-        SigmaErrorListener errorListener = new SigmaErrorListener();
-
-        org.example.parser.SigmaLexer lexer = new org.example.parser.SigmaLexer(input);
-        lexer.removeErrorListeners();
-        lexer.addErrorListener(errorListener);
-
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        tokens.fill(); // Force lexer to tokenize all input
-
-        return tokens;
+    /**
+     * Return the vocabulary exposed by the generated SigmaLexer.
+     * Tests call this to resolve token symbolic names for nicer assertions.
+     */
+    public Vocabulary getVocabulary() {
+        // Create a temporary lexer instance to access the vocabulary
+        SigmaLexer lexer = new SigmaLexer(CharStreams.fromString(""));
+        return lexer.getVocabulary();
     }
 }

@@ -1,4 +1,10 @@
+// Put generated parser/lexer classes into the org.example.parser package so
+// the rest of the Java code (and tests) can import them.
 grammar Sigma;
+
+@header {
+    package org.example.parser;
+}
 
 // Parser rules (with lowercase names)
 compilationUnit
@@ -95,7 +101,11 @@ additiveExpression
     ;
 
 multiplicativeExpression
-    : unaryExpression (MULTIPLICATIVE unaryExpression)*
+    : powerExpression (MULTIPLICATIVE powerExpression)*
+    ;
+
+powerExpression
+    : unaryExpression (POWER powerExpression)?
     ;
 
 unaryExpression
@@ -155,6 +165,7 @@ STRING_TYPE : 'String' ;
 VOID : 'void' ;
 
 // Operators - United by category
+// POWER uses '**' only. '^' is intentionally omitted because it has different semantics in some hosts (e.g. Scala).
 POWER : '**' ;
 MULTIPLICATIVE : '*' | '/' | '%' ;
 ADDITIVE : '+' | '-' ;

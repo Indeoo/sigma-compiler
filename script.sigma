@@ -1,5 +1,5 @@
 // Sigma language demo script (stable subset)
-// Shows only the features currently supported and runnable.
+// Uses `runcode` directives so each block is compiled/run in script mode.
 
 runcode println("--- Minimal language demo ---");
 
@@ -7,19 +7,24 @@ runcode println("--- Minimal language demo ---");
 runcode println("3 + 4 = " + (3 + 4));
 runcode println("4 - 3 = " + (4 - 3));
 
-// Double arithmetic
+// Floating point examples (double literals)
 runcode println("2.5 * 2 = " + (2.5 * 2));
-runcode println("4 / 2 = " + (4 / 2));
+runcode println("5.5 + 1.25 = " + (5.5 + 1.25));
+runcode println("5.5 - 2.25 = " + (5.5 - 2.25));
+runcode println("5.0 / 2 = " + (5.0 / 2));
+
+// Mixed int/double
+runcode println("3 + 2.5 = " + (3 + 2.5));
+runcode println("4 * 2.5 = " + (4 * 2.5));
 
 // Comparisons and booleans
 runcode println("5 > 3 is " + (5 > 3));
 runcode println("5 == 6 is " + (5 == 6));
 runcode println("3 < 5 is " + (3 < 5));
-// Additional comparison examples
 runcode println("5 >= 5 is " + (5 >= 5));
 runcode println("2 <= 3 is " + (2 <= 3));
 
-// If-else (branching) — use string literals only inside println
+// If-else (branching) — use a block runcode
 runcode
 if (5 > 3) {
 	println("ifStatement: 5 > 3 is true");
@@ -35,8 +40,57 @@ while (cnt < 3) {
 	cnt = cnt + 1;
 }
 
-runcode println("2 ^ 3 = " + (2 ^ 3));
+runcode println("2 ** 3 = " + (2 ** 3));
 runcode println("--- End of minimal demo ---");
+
+// Notes:
+// - string concatenation with doubles, named constants and
+//   user-defined functions are examples of features planned or partially
+//   implemented.
+// Sigma language demo script (stable subset)
+// Shows only the features currently supported and runnable.
+println("--- Minimal language demo ---");
+
+// Integer arithmetic
+println("3 + 4 = " + (3 + 4));
+println("4 - 3 = " + (4 - 3));
+
+// Floating point examples (double literals)
+println("2.5 * 2 = " + (2.5 * 2));
+println("5.5 + 1.25 = " + (5.5 + 1.25));
+println("5.5 - 2.25 = " + (5.5 - 2.25));
+println("5.0 / 2 = " + (5.0 / 2));
+
+// Mixed int/double
+println("3 + 2.5 = " + (3 + 2.5));
+println("4 * 2.5 = " + (4 * 2.5));
+
+// Comparisons and booleans
+println("5 > 3 is " + (5 > 3));
+println("5 == 6 is " + (5 == 6));
+println("3 < 5 is " + (3 < 5));
+// Additional comparison examples
+println("5 >= 5 is " + (5 >= 5));
+println("2 <= 3 is " + (2 <= 3));
+
+// If-else (branching) — use string literals only inside println
+runcode
+if (5 > 3) {
+	println("ifStatement: 5 > 3 is true");
+} else {
+	println("ifStatement: 3 > 5 is false");
+}
+
+// While loop (print integer counter only)
+runcode
+int cnt = 0;
+while (cnt < 3) {
+	println("Loop cycle " + cnt);
+	cnt = cnt + 1;
+}
+
+runcode println("2 ** 3 = " + (2 ** 3));
+println("--- End of minimal demo ---");
 
 
 // Notes:

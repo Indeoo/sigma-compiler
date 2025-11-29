@@ -8,6 +8,7 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
+    // Enable the ANTLR plugin so the grammar under src/main/antlr is generated during build
     id 'antlr'
 }
 
@@ -17,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    // ANTLR4 dependencies
+    // ANTLR: enable generation and runtime for the lexer/parser
     antlr 'org.antlr:antlr4:4.13.1'
     implementation 'org.antlr:antlr4-runtime:4.13.1'
 
@@ -49,13 +50,34 @@ java {
     }
 }
 
-// ANTLR4 configuration
-generateGrammarSource {
-    maxHeapSize = "64m"
-    arguments += ["-package", "org.example.parser", "-visitor"]
+// Ensure ANTLR-generated sources are compiled with the main Java sources
+sourceSets.main.java.srcDirs += file("$buildDir/generated-src/antlr/main")
+
+tasks.named('compileJava') {
+    dependsOn tasks.named('generateGrammarSource')
 }
+
+// ANTLR removed — no grammar generation
 
 application {
     // Define the main class for the application.
     mainClass = 'org.example.CompilerApp'
+}
+
+// Simple JavaExec task to run a small RD regression runner (does not depend on test sources)
+task runRdRegression(type: JavaExec) {
+    group = 'verification'
+    description = 'Run a small recursive-descent regression runner against syntax_error_tests.sigma'
+    mainClass = 'org.example.tools.RDRegressionRunner'
+    classpath = sourceSets.main.runtimeClasspath
+    args = [project.rootDir.toString() + '/syntax_error_tests.sigma']
+}
+
+task runLexerDemo(type: JavaExec) {
+    group = 'verification'
+    description = 'Run LexerDemo to dump tokens for a demo file'
+    mainClass = 'org.example.lexer.LexerDemo'
+    classpath = sourceSets.main.runtimeClasspath
+    // default to syntax_error_tests.sigma in project root
+    args = [project.rootDir.toString() + '/syntax_error_tests.sigma']
 }
