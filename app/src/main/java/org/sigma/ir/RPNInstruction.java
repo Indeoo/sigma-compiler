@@ -17,6 +17,7 @@ public class RPNInstruction {
     private final SigmaType type;       // Type information (may be null for non-expression instructions)
     private final int sourceLine;       // Line number in source code
     private final int sourceColumn;     // Column number in source code
+    private int slotIndex = -1;         // JVM local variable slot index (-1 = not set)
 
     /**
      * Creates an instruction without an operand or type information.
@@ -85,6 +86,39 @@ public class RPNInstruction {
     }
 
     /**
+     * Gets the JVM local variable slot index for LOAD/STORE instructions.
+     *
+     * @return the slot index, or -1 if not set
+     */
+    public int getSlotIndex() {
+        return slotIndex;
+    }
+
+    /**
+     * Sets the JVM local variable slot index for LOAD/STORE instructions.
+     *
+     * @param slotIndex the slot index (0, 1, 2, ...)
+     */
+    public void setSlotIndex(int slotIndex) {
+        this.slotIndex = slotIndex;
+    }
+
+    /**
+     * Returns true if this instruction has a slot index set.
+     */
+    public boolean hasSlotIndex() {
+        return slotIndex >= 0;
+    }
+
+    /**
+     * Gets the variable name from the operand (for LOAD/STORE instructions).
+     * Returns null if operand is not a String.
+     */
+    public String getVariableName() {
+        return (operand instanceof String) ? (String) operand : null;
+    }
+
+    /**
      * Returns a human-readable representation of this instruction.
      */
     @Override
@@ -99,6 +133,11 @@ public class RPNInstruction {
             } else {
                 sb.append(operand);
             }
+        }
+
+        // Show slot index if set (for LOAD/STORE instructions)
+        if (hasSlotIndex()) {
+            sb.append(" [slot=").append(slotIndex).append("]");
         }
 
         if (type != null) {

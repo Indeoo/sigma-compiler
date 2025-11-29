@@ -16,6 +16,7 @@ public class RPNGenerator {
     private final SymbolTable symbolTable;
     private final Map<Ast.Expression, SigmaType> expressionTypes;
     private int labelCounter = 0;
+    private LocalVariableAllocator currentAllocator = null;  // Active allocator for current method
 
     public RPNGenerator(SemanticResult semanticResult) {
         this.symbolTable = semanticResult.getSymbolTable();
@@ -74,7 +75,15 @@ public class RPNGenerator {
 
             // Store the value in the variable
             SigmaType varType = typeOf(decl.init);
-            emit(RPNInstruction.store(decl.name, varType, decl.line, decl.col));
+            RPNInstruction storeInstr = RPNInstruction.store(decl.name, varType, decl.line, decl.col);
+
+            // Allocate slot and set it on the instruction
+            if (currentAllocator != null) {
+                int slot = currentAllocator.allocateVariable(decl.name, varType);
+                storeInstr.setSlotIndex(slot);
+            }
+
+            emit(storeInstr);
         }
     }
 
@@ -85,7 +94,15 @@ public class RPNGenerator {
         // Store in the target variable
         SigmaType valueType = typeOf(assign.value);
         // Assignment doesn't have line/col, use 0
-        emit(RPNInstruction.store(assign.name, valueType, 0, 0));
+        RPNInstruction storeInstr = RPNInstruction.store(assign.name, valueType, 0, 0);
+
+        // Set slot index if allocator is available
+        if (currentAllocator != null && currentAllocator.hasVariable(assign.name)) {
+            int slot = currentAllocator.getSlot(assign.name);
+            storeInstr.setSlotIndex(slot);
+        }
+
+        emit(storeInstr);
     }
 
     private void generateIfStatement(Ast.IfStatement ifStmt) {
@@ -160,14 +177,31 @@ public class RPNGenerator {
         String methodStartLabel = "method_" + methodDecl.name;
         emit(RPNInstruction.label(methodStartLabel, methodDecl.line, methodDecl.col));
 
-        // Generate method body
-        for (Ast.Statement stmt : methodDecl.body.statements) {
-            generateStatement(stmt);
-        }
+        // Create allocator for this method
+        // For now, assume all methods are static (no "this" reference)
+        // TODO: Detect instance methods and pass true
+        LocalVariableAllocator allocator = new LocalVariableAllocator(false);
 
-        // Add implicit return for void methods
-        if (methodDecl.returnType.equals("void")) {
-            emit(new RPNInstruction(RPNOpcode.RETURN_VOID, methodDecl.line, methodDecl.col));
+        // Allocate slots for parameters
+        allocator.allocateParameters(methodDecl.parameters);
+
+        // Set as current allocator
+        LocalVariableAllocator previousAllocator = currentAllocator;
+        currentAllocator = allocator;
+
+        try {
+            // Generate method body
+            for (Ast.Statement stmt : methodDecl.body.statements) {
+                generateStatement(stmt);
+            }
+
+            // Add implicit return for void methods
+            if (methodDecl.returnType.equals("void")) {
+                emit(new RPNInstruction(RPNOpcode.RETURN_VOID, methodDecl.line, methodDecl.col));
+            }
+        } finally {
+            // Restore previous allocator
+            currentAllocator = previousAllocator;
         }
     }
 
@@ -257,7 +291,15 @@ public class RPNGenerator {
 
     private void generateIdentifier(Ast.Identifier id) {
         SigmaType type = typeOf(id);
-        emit(RPNInstruction.load(id.name, type, id.line, id.col));
+        RPNInstruction loadInstr = RPNInstruction.load(id.name, type, id.line, id.col);
+
+        // Set slot index if allocator is available
+        if (currentAllocator != null && currentAllocator.hasVariable(id.name)) {
+            int slot = currentAllocator.getSlot(id.name);
+            loadInstr.setSlotIndex(slot);
+        }
+
+        emit(loadInstr);
     }
 
     private void generateBinary(Ast.Binary binary) {
