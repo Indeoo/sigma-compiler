@@ -253,6 +253,14 @@ public class SemanticAnalyzer {
                 ));
             }
         }
+
+        Scope.ScopeType scopeType = symbolTable.getCurrentScopeType();
+        if (scopeType == Scope.ScopeType.METHOD || scopeType == Scope.ScopeType.BLOCK) {
+            if (!symbolTable.define(varDecl.name, declaredType, Symbol.SymbolKind.VARIABLE,
+                                   varDecl.line, varDecl.col)) {
+                convertSymbolTableErrors(varDecl.line, varDecl.col);
+            }
+        }
     }
 
     /**

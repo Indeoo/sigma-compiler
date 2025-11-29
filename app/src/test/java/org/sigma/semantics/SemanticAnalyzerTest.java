@@ -526,4 +526,23 @@ public class SemanticAnalyzerTest {
         SigmaType identifierType = result.getExpressionType(piRef);
         assertEquals(TypeRegistry.DOUBLE, identifierType);
     }
+
+    @Test
+    void testScriptWrapperLocalsResolve() {
+        SemanticAnalyzer analyzer = new SemanticAnalyzer();
+
+        Ast.VariableDeclaration declA = new Ast.VariableDeclaration("int", "a", new Ast.IntLiteral(10, 0, 0), 0, 0);
+        Ast.Identifier aRef = new Ast.Identifier("a", 1, 0);
+        Ast.VariableDeclaration declB = new Ast.VariableDeclaration("int", "b",
+            new Ast.Binary("+", aRef, new Ast.IntLiteral(5, 0, 0), 1, 0), 1, 0);
+
+        Ast.Block body = new Ast.Block(List.of(declA, declB));
+        Ast.MethodDeclaration run = new Ast.MethodDeclaration("void", "run", List.of(), body, 0, 0);
+        Ast.ClassDeclaration script = new Ast.ClassDeclaration("Script", List.of(run), 0, 0);
+        Ast.CompilationUnit ast = new Ast.CompilationUnit(List.of(script));
+
+        SemanticResult result = analyzer.analyze(ast);
+        assertTrue(result.isSuccessful(), result::getErrorsAsString);
+        assertEquals(TypeRegistry.INT, result.getExpressionType(aRef));
+    }
 }
