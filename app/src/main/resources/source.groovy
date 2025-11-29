@@ -16,6 +16,10 @@ boolean combined = flag1 && flag2;
 int negated = -a;
 boolean inverted = !flag1;
 
+int test() {
+    return 10;
+}
+
 class Calculator {
     double pi = 3.14159;
 
