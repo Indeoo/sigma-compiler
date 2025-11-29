@@ -23,7 +23,3 @@ class Calculator {
         return pi * radius * radius;
     }
 }
-
-Calculator calculator = new Calculator();
-
-calculator.circleArea(1)

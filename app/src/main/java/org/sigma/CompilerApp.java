@@ -1,9 +1,9 @@
 package org.sigma;
 
-import org.sigma.ir.RPNGenerator;
-import org.sigma.ir.RPNProgram;
 import org.sigma.lexer.SigmaLexerWrapper;
 import org.sigma.lexer.SigmaToken;
+import org.sigma.postfix.PostfixGenerator;
+import org.sigma.postfix.PostfixProgram;
 import org.sigma.semantics.SemanticAnalyzer;
 import org.sigma.semantics.SemanticResult;
 import org.sigma.parser.ParseResult;
@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 public class CompilerApp {
+    private static final Path POSTFIX_OUTPUT = Path.of("app/src/main/resources/postfix/output.postfix");
 
     public static void main(String[] args) throws IOException {
         Path p;
@@ -50,18 +51,21 @@ public class CompilerApp {
 
         System.out.println(semanticResult.visualize());
 
-        // Generate RPN intermediate representation
+        // Generate Postfix IR for PSM.py
         if (semanticResult.isSuccessful()) {
-            System.out.println("\n" + "=".repeat(70));
-            System.out.println("RPN INTERMEDIATE REPRESENTATION");
+            System.out.println("\n" + "=".repeat(70)); 
+            System.out.println("POSTFIX INTERMEDIATE REPRESENTATION");
             System.out.println("=".repeat(70));
 
-            RPNGenerator rpnGenerator = new RPNGenerator(semanticResult);
-            RPNProgram rpnProgram = rpnGenerator.generate(parseResult.getAst());
-
-            System.out.println(rpnProgram.visualize());
+            PostfixGenerator postfixGenerator = new PostfixGenerator();
+            PostfixProgram program = postfixGenerator.generate(semanticResult);
+            String postfixText = program.toText();
+            System.out.println(postfixText);
+            Files.createDirectories(POSTFIX_OUTPUT.getParent());
+            Files.writeString(POSTFIX_OUTPUT, postfixText);
+            System.out.println("\nPostfix IR saved to: " + POSTFIX_OUTPUT.toAbsolutePath());
         } else {
-            System.out.println("\nSkipping RPN generation due to semantic errors.");
+            System.out.println("\nSkipping postfix generation due to semantic errors.");
         }
     }
 

@@ -1,0 +1,64 @@
+.target: Postfix Machine
+.version: 0.3
+
+.vars(
+	a	int
+	b	int
+	c	int
+	result	int
+	flag1	bool
+	flag2	bool
+	combined	bool
+	negated	int
+	inverted	bool
+)
+
+.labels(
+	m1	41
+)
+
+.code(
+	a	l-val
+	10	int
+	=	assign_op
+	b	l-val
+	5	int
+	=	assign_op
+	c	l-val
+	3	int
+	=	assign_op
+	result	l-val
+	a	r-val
+	b	r-val
+	*	math_op
+	c	r-val
+	+	math_op
+	2	int
+	-	math_op
+	=	assign_op
+	flag1	l-val
+	a	r-val
+	b	r-val
+	>	rel_op
+	=	assign_op
+	flag2	l-val
+	b	r-val
+	c	r-val
+	<=	rel_op
+	=	assign_op
+	combined	l-val
+	flag1	r-val
+	flag2	r-val
+	AND	bool_op
+	=	assign_op
+	negated	l-val
+	a	r-val
+	NEG	math_op
+	=	assign_op
+	inverted	l-val
+	flag1	r-val
+	NOT	bool_op
+	=	assign_op
+	m1	label
+	:	colon
+)
