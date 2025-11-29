@@ -54,21 +54,21 @@ public class CompilerApp {
 
         System.out.println(semanticResult.visualize());
 
-        // Generate Postfix IR for PSM.py
-        if (semanticResult.isSuccessful()) {
-            System.out.println("\n" + "=".repeat(70)); 
-            if ("JVM".equalsIgnoreCase(BACKEND)) {
-                System.out.println("JVM BYTECODE OUTPUT");
-                System.out.println("=".repeat(70));
-                emitJvm(semanticResult);
-            } else {
-                System.out.println("POSTFIX INTERMEDIATE REPRESENTATION");
-                System.out.println("=".repeat(70));
-                emitPostfix(semanticResult);
-            }
-        } else {
-            System.out.println("\nSkipping postfix generation due to semantic errors.");
-        }
+//        // Generate Postfix IR for PSM.py
+//        if (semanticResult.isSuccessful()) {
+//            System.out.println("\n" + "=".repeat(70));
+//            if ("JVM".equalsIgnoreCase(BACKEND)) {
+//                System.out.println("JVM BYTECODE OUTPUT");
+//                System.out.println("=".repeat(70));
+//                emitJvm(semanticResult);
+//            } else {
+//                System.out.println("POSTFIX INTERMEDIATE REPRESENTATION");
+//                System.out.println("=".repeat(70));
+//                emitPostfix(semanticResult);
+//            }
+//        } else {
+//            System.out.println("\nSkipping postfix generation due to semantic errors.");
+//        }
     }
 
     /**

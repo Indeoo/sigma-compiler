@@ -20,6 +20,7 @@ class Calculator {
     double pi = 3.14159;
 
     double circleArea(double radius) {
+        circleArea(1)
         return pi * radius * radius;
     }
 }

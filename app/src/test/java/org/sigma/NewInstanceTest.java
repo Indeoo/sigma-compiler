@@ -20,15 +20,40 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for the new instance (object creation) feature.
  */
 public class NewInstanceTest {
+    private final SigmaParserWrapper parser = new SigmaParserWrapper();
+
+    private Ast.CompilationUnit parseUnit(String code) {
+        ParseResult parseResult = parser.parse(code);
+        assertTrue(parseResult.isSuccessful(), "Parse should succeed");
+        assertNotNull(parseResult.getAst());
+        return parseResult.getAst();
+    }
+
+    private List<Ast.Statement> scriptStatements(Ast.CompilationUnit ast) {
+        for (Ast.Statement stmt : ast.statements) {
+            if (stmt instanceof Ast.ClassDeclaration) {
+                Ast.ClassDeclaration cls = (Ast.ClassDeclaration) stmt;
+                if ("Script".equals(cls.name)) {
+                    for (Ast.Statement member : cls.members) {
+                        if (member instanceof Ast.MethodDeclaration) {
+                            Ast.MethodDeclaration method = (Ast.MethodDeclaration) member;
+                            if ("run".equals(method.name)) {
+                                return method.body.statements;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return ast.statements;
+    }
 
     @Test
     void testParseNewInstanceNoArgs() {
-        SigmaParserWrapper parser = new SigmaParserWrapper();
-        ParseResult parseResult = parser.parse("new Person()");
-        Ast.CompilationUnit cu = parseResult.getAst();
-
-        assertEquals(1, cu.statements.size());
-        Ast.ExpressionStatement stmt = (Ast.ExpressionStatement) cu.statements.get(0);
+        Ast.CompilationUnit cu = parseUnit("new Person()");
+        List<Ast.Statement> stmts = scriptStatements(cu);
+        assertEquals(1, stmts.size());
+        Ast.ExpressionStatement stmt = (Ast.ExpressionStatement) stmts.get(0);
         Ast.NewInstance newInst = (Ast.NewInstance) stmt.expr;
 
         assertEquals("Person", newInst.className);
@@ -37,11 +62,8 @@ public class NewInstanceTest {
 
     @Test
     void testParseNewInstanceWithArgs() {
-        SigmaParserWrapper parser = new SigmaParserWrapper();
-        ParseResult parseResult = parser.parse("new Calculator(5, 10)");
-        Ast.CompilationUnit cu = parseResult.getAst();
-
-        Ast.ExpressionStatement stmt = (Ast.ExpressionStatement) cu.statements.get(0);
+        Ast.CompilationUnit cu = parseUnit("new Calculator(5, 10)");
+        Ast.ExpressionStatement stmt = (Ast.ExpressionStatement) scriptStatements(cu).get(0);
         Ast.NewInstance newInst = (Ast.NewInstance) stmt.expr;
 
         assertEquals("Calculator", newInst.className);
@@ -55,10 +77,7 @@ public class NewInstanceTest {
             Person p = new Person();
             """;
 
-        SigmaParserWrapper parser = new SigmaParserWrapper();
-        ParseResult parseResult = parser.parse(source);
-        Ast.CompilationUnit cu = parseResult.getAst();
-
+        Ast.CompilationUnit cu = parseUnit(source);
         SemanticAnalyzer analyzer = new SemanticAnalyzer();
         SemanticResult result = analyzer.analyze(cu);
 
@@ -70,10 +89,7 @@ public class NewInstanceTest {
     void testSemanticUndefinedClass() {
         String source = "Person p = new Person();";
 
-        SigmaParserWrapper parser = new SigmaParserWrapper();
-        ParseResult parseResult = parser.parse(source);
-        Ast.CompilationUnit cu = parseResult.getAst();
-
+        Ast.CompilationUnit cu = parseUnit(source);
         SemanticAnalyzer analyzer = new SemanticAnalyzer();
         SemanticResult result = analyzer.analyze(cu);
 
@@ -88,10 +104,7 @@ public class NewInstanceTest {
     void testSemanticPrimitiveType() {
         String source = "int x = new int();";
 
-        SigmaParserWrapper parser = new SigmaParserWrapper();
-        ParseResult parseResult = parser.parse(source);
-        Ast.CompilationUnit cu = parseResult.getAst();
-
+        Ast.CompilationUnit cu = parseUnit(source);
         SemanticAnalyzer analyzer = new SemanticAnalyzer();
         SemanticResult result = analyzer.analyze(cu);
 
@@ -107,10 +120,7 @@ public class NewInstanceTest {
             Person p = new Person();
             """;
 
-        SigmaParserWrapper parser = new SigmaParserWrapper();
-        ParseResult parseResult = parser.parse(source);
-        Ast.CompilationUnit cu = parseResult.getAst();
-
+        Ast.CompilationUnit cu = parseUnit(source);
         SemanticAnalyzer analyzer = new SemanticAnalyzer();
         SemanticResult semanticResult = analyzer.analyze(cu);
         assertTrue(semanticResult.getErrors().isEmpty());
@@ -150,10 +160,7 @@ public class NewInstanceTest {
             Calculator c = new Calculator();
             """;
 
-        SigmaParserWrapper parser = new SigmaParserWrapper();
-        ParseResult parseResult = parser.parse(source);
-        Ast.CompilationUnit cu = parseResult.getAst();
-
+        Ast.CompilationUnit cu = parseUnit(source);
         SemanticAnalyzer analyzer = new SemanticAnalyzer();
         SemanticResult result = analyzer.analyze(cu);
 
@@ -169,12 +176,8 @@ public class NewInstanceTest {
             Outer o = new Outer(new Inner());
             """;
 
-        SigmaParserWrapper parser = new SigmaParserWrapper();
-        ParseResult parseResult = parser.parse(source);
-        Ast.CompilationUnit cu = parseResult.getAst();
-
-        // Verify parsing
-        Ast.VariableDeclaration varDecl = (Ast.VariableDeclaration) cu.statements.get(2);
+        Ast.CompilationUnit cu = parseUnit(source);
+        Ast.VariableDeclaration varDecl = (Ast.VariableDeclaration) scriptStatements(cu).get(0);
         Ast.NewInstance outer = (Ast.NewInstance) varDecl.init;
 
         assertEquals("Outer", outer.className);
