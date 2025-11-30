@@ -41,7 +41,6 @@ public class CompilerApp {
 
         ParseResult parseResult = new SigmaParserWrapper().parse(list_token);
 
-        System.out.println(parseResult);
         System.out.println(parseResult.getAstAsString());
 
         // Run semantic analysis
