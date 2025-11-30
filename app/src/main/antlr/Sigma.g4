@@ -126,7 +126,12 @@ postfixOp
 primaryExpression
     : IDENTIFIER
     | literal
-    | LPAREN expression RPAREN                 // parenthesized expression
+    | LPAREN expression RPAREN
+    | creator                      // <--- Add this option
+    ;
+
+creator
+    : NEW type LPAREN argumentList? RPAREN
     ;
 
 argumentList
@@ -207,3 +212,6 @@ WS : [ \t\r\n]+ -> skip ;
 LINE_COMMENT : '//' ~[\r\n]* -> skip ;
 
 BLOCK_COMMENT : '/*' .*? '*/' -> skip ;
+
+// Add this to your Lexer rules
+NEW : 'new' ;

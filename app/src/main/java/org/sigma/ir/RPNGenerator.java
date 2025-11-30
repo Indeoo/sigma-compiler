@@ -15,12 +15,18 @@ public class RPNGenerator {
     private final RPNProgram.Builder programBuilder;
     private final SymbolTable symbolTable;
     private final Map<Ast.Expression, SigmaType> expressionTypes;
+    private final Map<Ast.Expression, Symbol> resolvedSymbols;
+    private final Map<String, ClassInfo> classInfos;
     private int labelCounter = 0;
     private LocalVariableAllocator currentAllocator = null;  // Active allocator for current method
+    private ClassInfo currentClassContext = null;
+    private ClassInfo currentMethodClassContext = null;
 
     public RPNGenerator(SemanticResult semanticResult) {
         this.symbolTable = semanticResult.getSymbolTable();
         this.expressionTypes = semanticResult.getExpressionTypes();
+        this.resolvedSymbols = semanticResult.getResolvedSymbols();
+        this.classInfos = semanticResult.getClassInfos();
         this.programBuilder = new RPNProgram.Builder(symbolTable);
     }
 
@@ -178,9 +184,10 @@ public class RPNGenerator {
         emit(RPNInstruction.label(methodStartLabel, methodDecl.line, methodDecl.col));
 
         // Create allocator for this method
-        // For now, assume all methods are static (no "this" reference)
-        // TODO: Detect instance methods and pass true
-        LocalVariableAllocator allocator = new LocalVariableAllocator(false);
+        ClassInfo previousMethodClass = currentMethodClassContext;
+        currentMethodClassContext = currentClassContext;
+        boolean isInstanceMethod = currentMethodClassContext != null;
+        LocalVariableAllocator allocator = new LocalVariableAllocator(isInstanceMethod);
 
         // Allocate slots for parameters
         allocator.allocateParameters(methodDecl.parameters);
@@ -202,10 +209,13 @@ public class RPNGenerator {
         } finally {
             // Restore previous allocator
             currentAllocator = previousAllocator;
+            currentMethodClassContext = previousMethodClass;
         }
     }
 
     private void generateClassDeclaration(Ast.ClassDeclaration classDecl) {
+        ClassInfo previousClass = currentClassContext;
+        currentClassContext = classInfos.get(classDecl.name);
         // For now, just generate all method declarations
         // Field handling will be added later
         for (Ast.Statement stmt : classDecl.members) {
@@ -213,6 +223,7 @@ public class RPNGenerator {
                 generateMethodDeclaration((Ast.MethodDeclaration) stmt);
             }
         }
+        currentClassContext = previousClass;
     }
 
     private void generateFieldDeclaration(Ast.FieldDeclaration fieldDecl) {
@@ -255,6 +266,8 @@ public class RPNGenerator {
             generateCall((Ast.Call) expr);
         } else if (expr instanceof Ast.MemberAccess) {
             generateMemberAccess((Ast.MemberAccess) expr);
+        } else if (expr instanceof Ast.NewInstance) {
+            generateNewInstance((Ast.NewInstance) expr);
         } else {
             throw new UnsupportedOperationException(
                 "Unsupported expression type: " + expr.getClass().getSimpleName()
@@ -290,6 +303,11 @@ public class RPNGenerator {
     }
 
     private void generateIdentifier(Ast.Identifier id) {
+        Symbol resolved = resolvedSymbols.get(id);
+        if (resolved != null && resolved.isField()) {
+            generateImplicitFieldLoad(resolved, id.line, id.col);
+            return;
+        }
         SigmaType type = typeOf(id);
         RPNInstruction loadInstr = RPNInstruction.load(id.name, type, id.line, id.col);
 
@@ -360,6 +378,30 @@ public class RPNGenerator {
             fieldType, memberAccess.line, memberAccess.col));
     }
 
+    private void generateNewInstance(Ast.NewInstance newInstance) {
+        SigmaType objectType = typeOf(newInstance);
+
+        // Step 1: Allocate uninitialized object
+        emit(new RPNInstruction(RPNOpcode.NEW, newInstance.className, objectType,
+            newInstance.line, newInstance.col));
+
+        // Step 2: Duplicate object reference (one for constructor, one for return value)
+        emit(new RPNInstruction(RPNOpcode.DUP, null, objectType,
+            newInstance.line, newInstance.col));
+
+        // Step 3: Push all constructor arguments onto stack
+        for (Ast.Expression arg : newInstance.args) {
+            generateExpression(arg);
+        }
+
+        // Step 4: Call constructor (INVOKESPECIAL <init>)
+        // This consumes the duplicate reference and all arguments
+        emit(RPNInstruction.invokespecial("<init>", newInstance.args.size(),
+            TypeRegistry.VOID, newInstance.line, newInstance.col));
+
+        // Stack now contains: [initialized_object]
+    }
+
     // ============ Helper Methods ============
 
     /**
@@ -386,6 +428,21 @@ public class RPNGenerator {
             return SigmaType.ErrorType.getInstance();
         }
         return type;
+    }
+
+    private void generateImplicitFieldLoad(Symbol fieldSymbol, int line, int col) {
+        if (currentAllocator == null || currentMethodClassContext == null) {
+            throw new IllegalStateException("Field access outside of an instance method");
+        }
+
+        SigmaType thisType = currentMethodClassContext.getClassType();
+        RPNInstruction loadThis = RPNInstruction.load("this", thisType, line, col);
+        if (currentAllocator.hasVariable("this")) {
+            loadThis.setSlotIndex(currentAllocator.getSlot("this"));
+        }
+        emit(loadThis);
+        emit(new RPNInstruction(RPNOpcode.GET_FIELD, fieldSymbol.getName(),
+            fieldSymbol.getType(), line, col));
     }
 
     /**

@@ -2,6 +2,8 @@ package org.sigma.parser;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -11,6 +13,45 @@ public class AstStructureTest {
 
     private final SigmaParserWrapper parser = new SigmaParserWrapper();
 
+    private Ast.CompilationUnit parseUnit(String code) {
+        ParseResult result = parser.parse(code);
+        assertTrue(result.isSuccessful(), "Parse should succeed");
+        assertNotNull(result.getAst());
+        return result.getAst();
+    }
+
+    private List<Ast.Statement> scriptStatements(Ast.CompilationUnit ast) {
+        for (Ast.Statement stmt : ast.statements) {
+            if (stmt instanceof Ast.ClassDeclaration) {
+                Ast.ClassDeclaration cls = (Ast.ClassDeclaration) stmt;
+                if ("Script".equals(cls.name)) {
+                    for (Ast.Statement member : cls.members) {
+                        if (member instanceof Ast.MethodDeclaration) {
+                            Ast.MethodDeclaration method = (Ast.MethodDeclaration) member;
+                            if ("run".equals(method.name)) {
+                                return method.body.statements;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return ast.statements;
+    }
+
+    private Ast.ClassDeclaration findClass(Ast.CompilationUnit ast, String name) {
+        for (Ast.Statement stmt : ast.statements) {
+            if (stmt instanceof Ast.ClassDeclaration) {
+                Ast.ClassDeclaration cls = (Ast.ClassDeclaration) stmt;
+                if (name.equals(cls.name)) {
+                    return cls;
+                }
+            }
+        }
+        fail("Class " + name + " not found");
+        return null;
+    }
+
     @Test
     void testMethodDeclarationStructure() {
         String code = """
@@ -19,15 +60,11 @@ public class AstStructureTest {
             }
             """;
 
-        ParseResult result = parser.parse(code);
-        assertTrue(result.isSuccessful(), "Parse should succeed");
-        assertNotNull(result.getAst());
+        Ast.CompilationUnit ast = parseUnit(code);
+        List<Ast.Statement> stmts = scriptStatements(ast);
+        assertEquals(1, stmts.size(), "Should have 1 statement");
 
-        // Verify AST structure
-        Ast.CompilationUnit ast = result.getAst();
-        assertEquals(1, ast.statements.size(), "Should have 1 statement");
-
-        Ast.Statement stmt = ast.statements.get(0);
+        Ast.Statement stmt = stmts.get(0);
         assertTrue(stmt instanceof Ast.MethodDeclaration, "Should be MethodDeclaration");
 
         Ast.MethodDeclaration method = (Ast.MethodDeclaration) stmt;
@@ -60,18 +97,8 @@ public class AstStructureTest {
             }
             """;
 
-        ParseResult result = parser.parse(code);
-        assertTrue(result.isSuccessful(), "Parse should succeed");
-        assertNotNull(result.getAst());
-
-        // Verify AST structure
-        Ast.CompilationUnit ast = result.getAst();
-        assertEquals(1, ast.statements.size(), "Should have 1 statement");
-
-        Ast.Statement stmt = ast.statements.get(0);
-        assertTrue(stmt instanceof Ast.ClassDeclaration, "Should be ClassDeclaration");
-
-        Ast.ClassDeclaration classDecl = (Ast.ClassDeclaration) stmt;
+        Ast.CompilationUnit ast = parseUnit(code);
+        Ast.ClassDeclaration classDecl = findClass(ast, "Calculator");
         assertEquals("Calculator", classDecl.name);
         assertEquals(1, classDecl.members.size());
 
@@ -95,12 +122,8 @@ public class AstStructureTest {
             }
             """;
 
-        ParseResult result = parser.parse(code);
-        assertTrue(result.isSuccessful(), "Parse should succeed");
-        assertNotNull(result.getAst());
-
-        Ast.CompilationUnit ast = result.getAst();
-        Ast.ClassDeclaration classDecl = (Ast.ClassDeclaration) ast.statements.get(0);
+        Ast.CompilationUnit ast = parseUnit(code);
+        Ast.ClassDeclaration classDecl = findClass(ast, "Circle");
 
         assertEquals("Circle", classDecl.name);
         assertEquals(2, classDecl.members.size());
@@ -125,12 +148,8 @@ public class AstStructureTest {
             int x = obj.field;
             """;
 
-        ParseResult result = parser.parse(code);
-        assertTrue(result.isSuccessful(), "Parse should succeed");
-        assertNotNull(result.getAst());
-
-        Ast.CompilationUnit ast = result.getAst();
-        Ast.VariableDeclaration varDecl = (Ast.VariableDeclaration) ast.statements.get(0);
+        Ast.CompilationUnit ast = parseUnit(code);
+        Ast.VariableDeclaration varDecl = (Ast.VariableDeclaration) scriptStatements(ast).get(0);
 
         assertNotNull(varDecl.init, "Should have initializer");
         assertTrue(varDecl.init instanceof Ast.MemberAccess, "Init should be MemberAccess");
@@ -147,12 +166,8 @@ public class AstStructureTest {
             int x = obj.field.subfield;
             """;
 
-        ParseResult result = parser.parse(code);
-        assertTrue(result.isSuccessful(), "Parse should succeed");
-        assertNotNull(result.getAst());
-
-        Ast.CompilationUnit ast = result.getAst();
-        Ast.VariableDeclaration varDecl = (Ast.VariableDeclaration) ast.statements.get(0);
+        Ast.CompilationUnit ast = parseUnit(code);
+        Ast.VariableDeclaration varDecl = (Ast.VariableDeclaration) scriptStatements(ast).get(0);
 
         assertNotNull(varDecl.init);
         assertTrue(varDecl.init instanceof Ast.MemberAccess, "Should be MemberAccess");
@@ -176,12 +191,8 @@ public class AstStructureTest {
             int result = obj.method();
             """;
 
-        ParseResult result = parser.parse(code);
-        assertTrue(result.isSuccessful(), "Parse should succeed");
-        assertNotNull(result.getAst());
-
-        Ast.CompilationUnit ast = result.getAst();
-        Ast.VariableDeclaration varDecl = (Ast.VariableDeclaration) ast.statements.get(0);
+        Ast.CompilationUnit ast = parseUnit(code);
+        Ast.VariableDeclaration varDecl = (Ast.VariableDeclaration) scriptStatements(ast).get(0);
 
         assertNotNull(varDecl.init);
         assertTrue(varDecl.init instanceof Ast.Call, "Should be Call expression");
@@ -207,21 +218,15 @@ public class AstStructureTest {
             }
             """;
 
-        ParseResult result = parser.parse(code);
-        assertTrue(result.isSuccessful(), "Parse should succeed");
-        assertNotNull(result.getAst());
+        Ast.CompilationUnit ast = parseUnit(code);
+        List<Ast.Statement> stmts = scriptStatements(ast);
+        assertEquals(2, stmts.size());
 
-        Ast.CompilationUnit ast = result.getAst();
-        assertEquals(2, ast.statements.size());
-
-        assertTrue(ast.statements.get(0) instanceof Ast.MethodDeclaration);
-        assertTrue(ast.statements.get(1) instanceof Ast.MethodDeclaration);
-
-        Ast.MethodDeclaration method1 = (Ast.MethodDeclaration) ast.statements.get(0);
+        Ast.MethodDeclaration method1 = (Ast.MethodDeclaration) stmts.get(0);
         assertEquals("add", method1.name);
         assertEquals("int", method1.returnType);
 
-        Ast.MethodDeclaration method2 = (Ast.MethodDeclaration) ast.statements.get(1);
+        Ast.MethodDeclaration method2 = (Ast.MethodDeclaration) stmts.get(1);
         assertEquals("greet", method2.name);
         assertEquals("void", method2.returnType);
     }

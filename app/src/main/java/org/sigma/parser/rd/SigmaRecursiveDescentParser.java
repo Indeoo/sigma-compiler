@@ -742,6 +742,47 @@ public class SigmaRecursiveDescentParser {
                 return expr;
             }
 
+            // Try object creation with 'new'
+            if (ctx.match(TokenType.NEW) != null) {
+                // Expect class name (could be primitive type or identifier)
+                SigmaToken classNameToken = ctx.current();
+                String className;
+
+                if (ctx.match(TokenType.IDENTIFIER) != null) {
+                    className = classNameToken.getText();
+                } else if (ctx.match(TokenType.INT) != null) {
+                    className = "int";
+                } else if (ctx.match(TokenType.DOUBLE) != null) {
+                    className = "double";
+                } else if (ctx.match(TokenType.FLOAT) != null) {
+                    className = "float";
+                } else if (ctx.match(TokenType.BOOLEAN) != null) {
+                    className = "boolean";
+                } else if (ctx.match(TokenType.STRING_TYPE) != null) {
+                    className = "String";
+                } else {
+                    ctx.error("Expected class name after 'new'");
+                    return null;
+                }
+
+                // Expect '('
+                SigmaToken lparen = ctx.expect(TokenType.LPAREN, "Expected '(' after class name in constructor call");
+
+                // Parse argument list
+                List<Ast.Expression> args = new ArrayList<>();
+                if (!ctx.check(TokenType.RPAREN)) {
+                    List<Ast.Expression> argList = commaSeparated(expression()).parse(ctx);
+                    if (argList != null) {
+                        args.addAll(argList);
+                    }
+                }
+
+                // Expect ')'
+                ctx.expect(TokenType.RPAREN, "Expected ')' after constructor arguments");
+
+                return new Ast.NewInstance(className, args, lparen.getLine(), lparen.getCharPositionInLine());
+            }
+
             return null;
         };
     }

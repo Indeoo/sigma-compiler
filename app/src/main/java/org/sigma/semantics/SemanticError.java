@@ -26,6 +26,7 @@ public class SemanticError {
         INVALID_UNARY_OP,        // Invalid types for unary operator
         INVALID_CALL,            // Invalid function/method call
         INVALID_MEMBER_ACCESS,   // Invalid member access on non-class type
+        INVALID_CONSTRUCTOR_CALL,// Invalid constructor call
         VOID_EXPRESSION          // Void used in expression context
     }
 

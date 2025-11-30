@@ -137,4 +137,17 @@ public class Ast {
         }
     }
 
+    // Object instantiation with 'new' keyword
+    public static class NewInstance implements Expression {
+        public final String className;
+        public final List<Expression> args;
+        public final int line, col;
+        public NewInstance(String className, List<Expression> args, int line, int col) {
+            this.className = className;
+            this.args = args;
+            this.line = line;
+            this.col = col;
+        }
+    }
+
 }

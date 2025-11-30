@@ -214,6 +214,15 @@ public class RPNInstruction {
     }
 
     /**
+     * Creates an INVOKESPECIAL instruction for constructor calls.
+     */
+    public static RPNInstruction invokespecial(String methodName, int argCount, SigmaType returnType, int line, int col) {
+        // Store both method name and arg count as a CallOperand
+        CallOperand callOp = new CallOperand(methodName, argCount);
+        return new RPNInstruction(RPNOpcode.INVOKESPECIAL, callOp, returnType, line, col);
+    }
+
+    /**
      * Creates a simple arithmetic/logical instruction.
      */
     public static RPNInstruction simple(RPNOpcode opcode, SigmaType type, int line, int col) {
