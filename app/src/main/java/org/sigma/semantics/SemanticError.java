@@ -27,7 +27,9 @@ public class SemanticError {
         INVALID_CALL,            // Invalid function/method call
         INVALID_MEMBER_ACCESS,   // Invalid member access on non-class type
         INVALID_CONSTRUCTOR_CALL,// Invalid constructor call
-        VOID_EXPRESSION          // Void used in expression context
+        VOID_EXPRESSION,         // Void used in expression context
+        CONSTANT_REASSIGNMENT,   // Attempt to reassign a constant
+        CONSTANT_WITHOUT_INITIALIZER // Constant declaration missing initializer
     }
 
     /**

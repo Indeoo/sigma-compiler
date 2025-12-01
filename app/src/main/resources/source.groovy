@@ -9,8 +9,10 @@ int c = 3;
 // Constant declaration
 final String testString = "STRING";
 final int constant = 10;
+//constant = constant + 1;
 
 // Test complex arithmetic
+int x = ((2 * c) + b + a) ** 10 % 2;
 int result = a * b + c - 2;
 
 // Test comparison and logical operators
@@ -46,10 +48,6 @@ for (int loopValue in c) {
     c = c + loopValue;
 }
 
-for item in testString {
-    String loopMessage = item;
-}
-
 // Test unary operators
 int negated = -a;
 boolean inverted = !flag1;
@@ -73,13 +71,6 @@ class Calculator {
 Calculator calc = new Calculator();
 
 //SEMANTIC TESTS
-// Variable type checks: existing types
-boolean semanticBooleanValue = true;
-int semanticIntValue = 42;
-double semanticDoubleValue = 3.5;
-float semanticFloatValue = 1;
-String semanticStringValue = "semantic";
-String nullableString = null; // Null literal typing
 //
 //// Undefined type detection for variable declarations
 //UndefinedType missingTypeVariable;

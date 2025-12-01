@@ -111,6 +111,20 @@ public class AstStructureTest {
     }
 
     @Test
+    void testConstantDeclarationStructure() {
+        String code = """
+            final int ANSWER = 42;
+            """;
+
+        Ast.CompilationUnit ast = parseUnit(code);
+        Ast.VariableDeclaration varDecl = (Ast.VariableDeclaration) scriptStatements(ast).get(0);
+
+        assertTrue(varDecl.isConstant, "Declaration should be marked constant");
+        assertEquals("ANSWER", varDecl.name);
+        assertNotNull(varDecl.init, "Constant must have initializer");
+    }
+
+    @Test
     void testClassWithFieldsAndMethods() {
         String code = """
             class Circle {

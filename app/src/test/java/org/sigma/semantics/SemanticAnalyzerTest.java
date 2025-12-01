@@ -47,6 +47,27 @@ public class SemanticAnalyzerTest {
     }
 
     @Test
+    void testConstantDeclarationRegisteredAsConstant() {
+        SemanticAnalyzer analyzer = new SemanticAnalyzer();
+
+        Ast.VariableDeclaration constDecl = new Ast.VariableDeclaration(
+            "int",
+            "MAX",
+            new Ast.IntLiteral(5, 0, 0),
+            0, 0,
+            true
+        );
+        Ast.CompilationUnit ast = new Ast.CompilationUnit(List.of(constDecl));
+
+        SemanticResult result = analyzer.analyze(ast);
+        assertTrue(result.isSuccessful());
+
+        Symbol max = result.getSymbolTable().lookup("MAX");
+        assertNotNull(max);
+        assertTrue(max.isConstant());
+    }
+
+    @Test
     void testVariableDeclarationTypeMismatch() {
         SemanticAnalyzer analyzer = new SemanticAnalyzer();
 
@@ -66,6 +87,47 @@ public class SemanticAnalyzerTest {
         assertFalse(result.isSuccessful());
         assertEquals(1, result.getErrorCount());
         assertTrue(result.getErrors().get(0).getMessage().contains("Cannot assign"));
+    }
+
+    @Test
+    void testConstantReassignmentIsError() {
+        SemanticAnalyzer analyzer = new SemanticAnalyzer();
+
+        Ast.VariableDeclaration constDecl = new Ast.VariableDeclaration(
+            "int",
+            "CONST",
+            new Ast.IntLiteral(1, 0, 0),
+            0, 0,
+            true
+        );
+        Ast.Assignment assign = new Ast.Assignment("CONST", new Ast.IntLiteral(2, 0, 0));
+
+        Ast.CompilationUnit ast = new Ast.CompilationUnit(List.of(constDecl, assign));
+        SemanticResult result = analyzer.analyze(ast);
+
+        assertFalse(result.isSuccessful());
+        assertTrue(result.getErrors().stream()
+            .anyMatch(err -> err.getType() == SemanticError.SemanticErrorType.CONSTANT_REASSIGNMENT));
+    }
+
+    @Test
+    void testConstantRequiresInitializer() {
+        SemanticAnalyzer analyzer = new SemanticAnalyzer();
+
+        Ast.VariableDeclaration constDecl = new Ast.VariableDeclaration(
+            "int",
+            "NO_INIT",
+            null,
+            0, 0,
+            true
+        );
+
+        Ast.CompilationUnit ast = new Ast.CompilationUnit(List.of(constDecl));
+        SemanticResult result = analyzer.analyze(ast);
+
+        assertFalse(result.isSuccessful());
+        assertTrue(result.getErrors().stream()
+            .anyMatch(err -> err.getType() == SemanticError.SemanticErrorType.CONSTANT_WITHOUT_INITIALIZER));
     }
 
     @Test

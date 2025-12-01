@@ -16,6 +16,7 @@ public class Symbol {
      */
     public enum SymbolKind {
         VARIABLE,   // Local variable
+        CONSTANT,   // Immutable variable (final)
         PARAMETER,  // Method/function parameter
         METHOD,     // Method/function
         CLASS,      // Class declaration
@@ -86,6 +87,13 @@ public class Symbol {
      */
     public boolean isVariable() {
         return kind == SymbolKind.VARIABLE;
+    }
+
+    /**
+     * Check if this is a constant symbol
+     */
+    public boolean isConstant() {
+        return kind == SymbolKind.CONSTANT;
     }
 
     /**

@@ -24,7 +24,21 @@ public class Ast {
         public final String name;
         public final Expression init; // may be null
         public final int line, col;
-        public VariableDeclaration(String typeName, String name, Expression init, int line, int col) { this.typeName = typeName; this.name = name; this.init = init; this.line = line; this.col = col; }
+        public final boolean isConstant;
+
+        public VariableDeclaration(String typeName, String name, Expression init, int line, int col) {
+            this(typeName, name, init, line, col, false);
+        }
+
+        public VariableDeclaration(String typeName, String name, Expression init,
+                                   int line, int col, boolean isConstant) {
+            this.typeName = typeName;
+            this.name = name;
+            this.init = init;
+            this.line = line;
+            this.col = col;
+            this.isConstant = isConstant;
+        }
     }
 
     public static class Assignment implements Statement {

@@ -183,7 +183,10 @@ public class SemanticAnalyzer {
      */
     private void collectVariableDeclaration(Ast.VariableDeclaration varDecl) {
         SigmaType varType = typeRegistry.resolve(varDecl.typeName);
-        if (!symbolTable.define(varDecl.name, varType, Symbol.SymbolKind.VARIABLE,
+        Symbol.SymbolKind kind = varDecl.isConstant
+            ? Symbol.SymbolKind.CONSTANT
+            : Symbol.SymbolKind.VARIABLE;
+        if (!symbolTable.define(varDecl.name, varType, kind,
                                varDecl.line, varDecl.col)) {
             convertSymbolTableErrors(varDecl.line, varDecl.col);
         }
@@ -233,6 +236,14 @@ public class SemanticAnalyzer {
     private void checkVariableDeclaration(Ast.VariableDeclaration varDecl) {
         SigmaType declaredType = typeRegistry.resolve(varDecl.typeName);
 
+        if (varDecl.isConstant && varDecl.init == null) {
+            errors.add(new SemanticError(
+                SemanticError.SemanticErrorType.CONSTANT_WITHOUT_INITIALIZER,
+                "Constant '" + varDecl.name + "' must be initialized",
+                varDecl.line, varDecl.col
+            ));
+        }
+
         // Check if type exists
         if (declaredType == TypeRegistry.ERROR) {
             errors.add(new SemanticError(
@@ -258,7 +269,10 @@ public class SemanticAnalyzer {
 
         Scope.ScopeType scopeType = symbolTable.getCurrentScopeType();
         if (scopeType == Scope.ScopeType.METHOD || scopeType == Scope.ScopeType.BLOCK) {
-            if (!symbolTable.define(varDecl.name, declaredType, Symbol.SymbolKind.VARIABLE,
+            Symbol.SymbolKind kind = varDecl.isConstant
+                ? Symbol.SymbolKind.CONSTANT
+                : Symbol.SymbolKind.VARIABLE;
+            if (!symbolTable.define(varDecl.name, declaredType, kind,
                                    varDecl.line, varDecl.col)) {
                 convertSymbolTableErrors(varDecl.line, varDecl.col);
             }
@@ -283,6 +297,15 @@ public class SemanticAnalyzer {
                 SemanticError.SemanticErrorType.UNDEFINED_VARIABLE,
                 "Undefined variable: " + assignment.name,
                 0, 0 // Assignment doesn't have position info
+            ));
+            return;
+        }
+
+        if (symbol.isConstant()) {
+            errors.add(new SemanticError(
+                SemanticError.SemanticErrorType.CONSTANT_REASSIGNMENT,
+                "Cannot assign to constant '" + assignment.name + "'",
+                0, 0
             ));
             return;
         }

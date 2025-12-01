@@ -37,6 +37,15 @@ public class SymbolTest {
     }
 
     @Test
+    void testIsConstant() {
+        Symbol constant = new Symbol("X", TypeRegistry.INT, Symbol.SymbolKind.CONSTANT);
+        Symbol var = new Symbol("y", TypeRegistry.INT, Symbol.SymbolKind.VARIABLE);
+
+        assertTrue(constant.isConstant());
+        assertFalse(var.isConstant());
+    }
+
+    @Test
     void testIsParameter() {
         Symbol param = new Symbol("x", TypeRegistry.INT, Symbol.SymbolKind.PARAMETER);
         Symbol var = new Symbol("y", TypeRegistry.INT, Symbol.SymbolKind.VARIABLE);
@@ -120,12 +129,14 @@ public class SymbolTest {
     @Test
     void testAllSymbolKinds() {
         Symbol var = new Symbol("x", TypeRegistry.INT, Symbol.SymbolKind.VARIABLE);
+        Symbol constant = new Symbol("c", TypeRegistry.INT, Symbol.SymbolKind.CONSTANT);
         Symbol param = new Symbol("p", TypeRegistry.INT, Symbol.SymbolKind.PARAMETER);
         Symbol method = new Symbol("m", TypeRegistry.VOID, Symbol.SymbolKind.METHOD);
         Symbol cls = new Symbol("C", TypeRegistry.STRING, Symbol.SymbolKind.CLASS);
         Symbol field = new Symbol("f", TypeRegistry.INT, Symbol.SymbolKind.FIELD);
 
         assertTrue(var.isVariable());
+        assertTrue(constant.isConstant());
         assertTrue(param.isParameter());
         assertTrue(method.isMethod());
         assertTrue(cls.isClass());
