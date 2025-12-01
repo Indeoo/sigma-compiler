@@ -41,6 +41,14 @@ public class CompilerApp {
 
         ParseResult parseResult = new SigmaParserWrapper().parse(list_token);
 
+        if (!parseResult.isSuccessful()) {
+            System.err.println("Parse failed with " + parseResult.getErrorCount() + " error(s):");
+            for (String error : parseResult.getErrors()) {
+                System.err.println("  - " + error);
+            }
+            System.exit(1);
+        }
+
         System.out.println(parseResult.getAstAsString());
 
         // Run semantic analysis

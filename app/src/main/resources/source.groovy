@@ -14,20 +14,39 @@ boolean combined = flag1 && flag2;
 
 c = c + b + a;
 
+if (c > 5) {
+    c = c + 1;
+} else {
+    c = c - 1;
+}
+
+
+while(flag1) {
+    if (c > 5) {
+        c = c + 1;
+    } else {
+        c = c - 1;
+    }
+
+    c = c + 1;
+
+    flag1 = c > 20;
+}
+
 // Test unary operators
 int negated = -a;
 boolean inverted = !flag1;
 
 int test(int i) {
     i = i + 1;
-    if (i > 10) return i; else return test(i);
+
+    return i;
 }
 
 class Calculator {
     double pi = 3.14159;
 
     double circleArea(double radius) {
-        circleArea(1);
         return pi * radius * radius;
     }
 }
