@@ -50,6 +50,7 @@ statement
     : assignmentStatement
     | expressionStatement
     | ifStatement
+    | forStatement
     | whileStatement
     | returnStatement
     | block
@@ -64,7 +65,30 @@ expressionStatement
     ;
 
 ifStatement
-    : IF LPAREN expression RPAREN statement (ELSE statement)?
+    : IF ifCondition statement (ELSE statement)?
+    ;
+
+ifCondition
+    : LPAREN expression RPAREN
+    | expression
+    ;
+
+forStatement
+    : FOR forClause statement
+    ;
+
+forClause
+    : LPAREN groovyForClause RPAREN
+    | groovyForClause
+    ;
+
+groovyForClause
+    : forLoopVariable IN expression
+    ;
+
+forLoopVariable
+    : type IDENTIFIER
+    | IDENTIFIER
     ;
 
 whileStatement
@@ -159,6 +183,8 @@ type
 CLASS : 'class' ;
 IF : 'if' ;
 ELSE : 'else' ;
+FOR : 'for' ;
+IN : 'in' ;
 WHILE : 'while' ;
 RETURN : 'return' ;
 FINAL : 'final' ;
