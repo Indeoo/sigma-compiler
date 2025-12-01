@@ -131,6 +131,41 @@ public class SemanticAnalyzerTest {
     }
 
     @Test
+    void testMethodCallArgumentTypeMismatch() {
+        SemanticAnalyzer analyzer = new SemanticAnalyzer();
+
+        Ast.Parameter parameter = new Ast.Parameter("int", "arg", 0, 0);
+        Ast.ReturnStatement returnStmt = new Ast.ReturnStatement(
+            new Ast.StringLiteral("arg", 0, 0),
+            0,
+            0
+        );
+        Ast.MethodDeclaration methodDecl = new Ast.MethodDeclaration(
+            "String",
+            "duplicateParameterMethod",
+            List.of(parameter),
+            new Ast.Block(List.of(returnStmt)),
+            0,
+            0
+        );
+
+        Ast.Call badCall = new Ast.Call(
+            new Ast.Identifier("duplicateParameterMethod", 0, 0),
+            List.of(new Ast.StringLiteral("1", 0, 0)),
+            0,
+            0
+        );
+        Ast.ExpressionStatement callStmt = new Ast.ExpressionStatement(badCall, 0, 0);
+
+        Ast.CompilationUnit ast = new Ast.CompilationUnit(List.of(methodDecl, callStmt));
+        SemanticResult result = analyzer.analyze(ast);
+
+        assertFalse(result.isSuccessful());
+        assertTrue(result.getErrors().stream()
+            .anyMatch(err -> err.getType() == SemanticError.SemanticErrorType.TYPE_MISMATCH));
+    }
+
+    @Test
     void testVariableDeclarationWithInvalidType() {
         SemanticAnalyzer analyzer = new SemanticAnalyzer();
 

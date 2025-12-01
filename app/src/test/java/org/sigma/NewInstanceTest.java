@@ -177,7 +177,9 @@ public class NewInstanceTest {
             """;
 
         Ast.CompilationUnit cu = parseUnit(source);
-        Ast.VariableDeclaration varDecl = (Ast.VariableDeclaration) scriptStatements(cu).get(0);
+        Ast.Statement first = scriptStatements(cu).get(0);
+        System.out.println("DEBUG first stmt: " + first.getClass());
+        Ast.VariableDeclaration varDecl = (Ast.VariableDeclaration) first;
         Ast.NewInstance outer = (Ast.NewInstance) varDecl.init;
 
         assertEquals("Outer", outer.className);

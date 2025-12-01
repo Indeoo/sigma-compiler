@@ -4,6 +4,7 @@ import org.sigma.parser.Ast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +23,7 @@ public class SemanticAnalyzer {
     private final Map<Ast.Expression, SigmaType> expressionTypes;
     private final Map<Ast.Expression, Symbol> resolvedSymbols;
     private final Map<String, ClassInfo> classInfos;
+    private final Map<Symbol, List<SigmaType>> methodParameterTypes;
 
     // Track current method's return type for return statement checking
     private SigmaType currentMethodReturnType;
@@ -37,6 +39,7 @@ public class SemanticAnalyzer {
         this.expressionTypes = new HashMap<>();
         this.resolvedSymbols = new HashMap<>();
         this.classInfos = new HashMap<>();
+        this.methodParameterTypes = new IdentityHashMap<>();
         this.currentMethodReturnType = null;
         this.currentClassInfo = null;
     }
@@ -67,6 +70,7 @@ public class SemanticAnalyzer {
         expressionTypes.clear();
         resolvedSymbols.clear();
         classInfos.clear();
+        methodParameterTypes.clear();
         currentClassInfo = null;
 
         // Pass 1: Collect declarations (classes, methods, global variables)
@@ -161,18 +165,24 @@ public class SemanticAnalyzer {
         // Resolve return type
         SigmaType returnType = typeRegistry.resolve(methodDecl.returnType);
 
+        List<SigmaType> parameterTypes = new ArrayList<>();
+        for (Ast.Parameter parameter : methodDecl.parameters) {
+            parameterTypes.add(typeRegistry.resolve(parameter.type));
+        }
+
         // For now, store methods with return type only
         // TODO: Support method overloading by storing parameter types
         if (!symbolTable.define(methodDecl.name, returnType, Symbol.SymbolKind.METHOD,
                                methodDecl.line, methodDecl.col)) {
             convertSymbolTableErrors(methodDecl.line, methodDecl.col);
+        } else {
+            Symbol methodSymbol = symbolTable.lookupLocal(methodDecl.name);
+            if (methodSymbol != null && methodSymbol.isMethod()) {
+                methodParameterTypes.put(methodSymbol, parameterTypes);
+            }
         }
 
         if (owningClass != null && returnType != TypeRegistry.ERROR) {
-            List<SigmaType> parameterTypes = new ArrayList<>();
-            for (Ast.Parameter parameter : methodDecl.parameters) {
-                parameterTypes.add(typeRegistry.resolve(parameter.type));
-            }
             owningClass.addMethod(methodDecl.name, returnType, parameterTypes,
                                   methodDecl.line, methodDecl.col);
         }
@@ -691,6 +701,37 @@ public class SemanticAnalyzer {
                     id.line, id.col
                 ));
                 return TypeRegistry.ERROR;
+            }
+
+            List<SigmaType> argumentTypes = new ArrayList<>();
+            for (Ast.Expression arg : call.args) {
+                argumentTypes.add(inferExpressionType(arg));
+            }
+
+            List<SigmaType> parameterTypes = methodParameterTypes.get(symbol);
+            if (parameterTypes != null) {
+                if (call.args.size() != parameterTypes.size()) {
+                    errors.add(new SemanticError(
+                        SemanticError.SemanticErrorType.INVALID_CALL,
+                        String.format("Method %s expects %d arguments but got %d",
+                                      id.name, parameterTypes.size(), call.args.size()),
+                        call.line, call.col
+                    ));
+                }
+
+                int checkedArgs = Math.min(call.args.size(), parameterTypes.size());
+                for (int i = 0; i < checkedArgs; i++) {
+                    SigmaType argType = argumentTypes.get(i);
+                    SigmaType paramType = parameterTypes.get(i);
+                    if (!argType.isCompatibleWith(paramType)) {
+                        errors.add(new SemanticError(
+                            SemanticError.SemanticErrorType.TYPE_MISMATCH,
+                            String.format("Argument %d type %s is not assignable to %s",
+                                          i + 1, argType, paramType),
+                            call.line, call.col
+                        ));
+                    }
+                }
             }
 
             // Return the method's return type
