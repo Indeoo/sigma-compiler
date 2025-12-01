@@ -135,9 +135,10 @@ public class SigmaRecursiveDescentParser {
 
             ctx.expect(TokenType.SEMI, "Expected ';' after constant declaration");
 
-            // Return as VariableDeclaration (AST doesn't have ConstantDeclaration yet)
+            // Return as VariableDeclaration (AST doesn't have ConstantDeclaration yet; SemanticAnalyzer
+            // treats it as a normal variable declaration for now)
             return new Ast.VariableDeclaration(
-                "final " + typeName,
+                typeName,
                 idToken.getText(),
                 init,
                 idToken.getLine(),
