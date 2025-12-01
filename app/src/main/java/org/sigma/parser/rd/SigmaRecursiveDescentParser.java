@@ -891,7 +891,7 @@ public class SigmaRecursiveDescentParser {
 
                 case NULL:
                     ctx.consume();
-                    return new Ast.Identifier("null", token.getLine(), token.getCharPositionInLine());
+                    return new Ast.NullLiteral();
 
                 default:
                     return null;
