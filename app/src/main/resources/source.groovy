@@ -73,13 +73,13 @@ class Calculator {
 Calculator calc = new Calculator();
 
 //SEMANTIC TESTS
-//// Variable type checks: existing types
-//int semanticIntValue = 42;
-//double semanticDoubleValue = 3.5;
-//float semanticFloatValue = 1;
-//String semanticStringValue = "semantic";
-//boolean semanticBooleanValue = true;
-//String nullableString = null; // Null literal typing
+// Variable type checks: existing types
+boolean semanticBooleanValue = true;
+int semanticIntValue = 42;
+double semanticDoubleValue = 3.5;
+float semanticFloatValue = 1;
+String semanticStringValue = "semantic";
+String nullableString = null; // Null literal typing
 //
 //// Undefined type detection for variable declarations
 //UndefinedType missingTypeVariable;

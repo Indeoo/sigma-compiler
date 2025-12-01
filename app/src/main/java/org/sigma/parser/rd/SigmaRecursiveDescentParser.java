@@ -883,11 +883,11 @@ public class SigmaRecursiveDescentParser {
 
                 case TRUE:
                     ctx.consume();
-                    return new Ast.IntLiteral(1, token.getLine(), token.getCharPositionInLine());
+                    return new Ast.BooleanLiteral(true);
 
                 case FALSE:
                     ctx.consume();
-                    return new Ast.IntLiteral(0, token.getLine(), token.getCharPositionInLine());
+                    return new Ast.BooleanLiteral(false);
 
                 case NULL:
                     ctx.consume();
