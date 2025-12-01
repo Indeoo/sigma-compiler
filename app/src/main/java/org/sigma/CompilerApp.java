@@ -39,6 +39,11 @@ public class CompilerApp {
 
         List<SigmaToken> list_token = run_lexer(src);
 
+//        for (SigmaToken t : list_token) {
+//            System.out.printf("%s\t%s\t(line:%d col:%d)\n",
+//                    t.getType().name(), t.getText(), t.getLine(), t.getCharPositionInLine());
+//        }
+
         ParseResult parseResult = new SigmaParserWrapper().parse(list_token);
 
         if (!parseResult.isSuccessful()) {
@@ -49,6 +54,7 @@ public class CompilerApp {
             System.exit(1);
         }
 
+        System.out.println("AST-TREE:");
         System.out.println(parseResult.getAstAsString());
 
         // Run semantic analysis
@@ -121,14 +127,6 @@ public class CompilerApp {
     }
 
     private static List<SigmaToken> run_lexer(String src) {
-        SigmaLexerWrapper wrapper = new SigmaLexerWrapper();
-        List<SigmaToken> tokens = wrapper.tokenize(src);
-
-        for (SigmaToken t : tokens) {
-            System.out.printf("%s\t%s\t(line:%d col:%d)\n",
-                    t.getType().name(), t.getText(), t.getLine(), t.getCharPositionInLine());
-        }
-
-        return tokens;
+        return new SigmaLexerWrapper().tokenize(src);
     }
 }

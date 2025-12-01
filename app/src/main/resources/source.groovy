@@ -67,28 +67,33 @@ class Calculator {
     }
 }
 
+String duplicateParameterMethod(int arg) {
+    return "arg";
+}
 
-Calculator calc = new Calculator();
-
-//SEMANTIC TESTS
+duplicateParameterMethod("1")
 //
+//Calculator calc = new Calculator();
+//
+////SEMANTIC TESTS
+////
 //// Undefined type detection for variable declarations
 //UndefinedType missingTypeVariable;
-//
+////
 //// Initializer compatibility with declared type
 //int incompatibleInitializer = "oops";
-//
-//// Duplicate declarations within the same scope
+////
+////// Duplicate declarations within the same scope
 //int duplicatedVariable = 10;
 //int duplicatedVariable = 20;
-//
-//// Literal type inference
-//int literalIntValue = 7;
+////
+////// Literal type inference
+////int literalIntValue = 7;
 //double literalDoubleValue = 2.25;
 //String literalStringValue = "text";
 //boolean literalBooleanValue = false;
-//
-//// Arithmetic operators on numeric types
+////
+////// Arithmetic operators on numeric types
 //double arithmeticMix = literalIntValue + literalDoubleValue - 3 * 2 / 1 % 1;
 //double powerChain = literalIntValue ** 2;
 //
@@ -142,7 +147,7 @@ Calculator calc = new Calculator();
 //    loopGuard = loopGuard + 1;
 //}
 //
-//// Method checks: return type existence and parameter types
+// Method checks: return type existence and parameter types
 //double semanticAverage(double total, int count) {
 //    return total / count;
 //}
@@ -150,8 +155,8 @@ Calculator calc = new Calculator();
 //int methodParameterCheck(String label, double value) {
 //    return semanticIntValue;
 //}
-//
-//// Undefined return type detection
+
+// Undefined return type detection
 //UndefinedType methodWithUnknownReturn() {
 //    return null;
 //}
@@ -160,13 +165,10 @@ Calculator calc = new Calculator();
 //int invalidReturnMethod() {
 //    return "text";
 //}
-//
-//// Duplicate parameter names
-//int duplicateParameterMethod(int arg, int arg) {
-//    return arg;
-//}
-//
-//// Parameter type existence
+
+// Duplicate parameter names
+
+// Parameter type existence
 //int methodWithUnknownParameter(UndefinedType phantom) {
 //    return 0;
 //}
