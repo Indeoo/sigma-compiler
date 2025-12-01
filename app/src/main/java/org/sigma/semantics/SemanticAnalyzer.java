@@ -222,6 +222,8 @@ public class SemanticAnalyzer {
             checkMethodDeclaration((Ast.MethodDeclaration) stmt);
         } else if (stmt instanceof Ast.ClassDeclaration) {
             checkClassDeclaration((Ast.ClassDeclaration) stmt);
+        } else if (stmt instanceof Ast.ForEachStatement) {
+            checkForEachStatement((Ast.ForEachStatement) stmt);
         }
     }
 
@@ -322,6 +324,38 @@ public class SemanticAnalyzer {
             checkStatement(ifStmt.elseBranch);
             symbolTable.exitScope();
         }
+    }
+
+    /**
+     * Check for-each statement
+     */
+    private void checkForEachStatement(Ast.ForEachStatement forStmt) {
+        SigmaType iterableType = inferExpressionType(forStmt.iterable);
+
+        SigmaType loopVarType;
+        if (forStmt.hasExplicitType()) {
+            loopVarType = typeRegistry.resolve(forStmt.typeName);
+            if (loopVarType == TypeRegistry.ERROR) {
+                errors.add(new SemanticError(
+                    SemanticError.SemanticErrorType.UNDEFINED_CLASS,
+                    "Undefined type: " + forStmt.typeName,
+                    forStmt.line, forStmt.col
+                ));
+            }
+        } else {
+            loopVarType = iterableType != null ? iterableType : TypeRegistry.ERROR;
+        }
+
+        symbolTable.enterScope(Scope.ScopeType.BLOCK);
+        if (!symbolTable.define(forStmt.iteratorName, loopVarType, Symbol.SymbolKind.VARIABLE,
+                               forStmt.line, forStmt.col)) {
+            convertSymbolTableErrors(forStmt.line, forStmt.col);
+        }
+
+        if (forStmt.body != null) {
+            checkStatement(forStmt.body);
+        }
+        symbolTable.exitScope();
     }
 
     /**

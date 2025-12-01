@@ -10,10 +10,12 @@ public enum TokenType {
     CLASS,      // "class"
     IF,         // "if"
     ELSE,       // "else"
+    FOR,        // "for"
     WHILE,      // "while"
     RETURN,     // "return"
     FINAL,      // "final"
     NULL,       // "null"
+    IN,         // "in"
     NEW,        // "new"
 
     // Primitive type keywords

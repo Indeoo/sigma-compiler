@@ -37,7 +37,14 @@ while(flag1) {
     flag1 = c > 20;
 }
 
-// Test for
+// Groovy-like for loops (typed and untyped)
+for (int loopValue in semanticIntValue) {
+    semanticIntValue = semanticIntValue + loopValue;
+}
+
+for item in semanticStringValue {
+    String loopMessage = item;
+}
 
 // Test unary operators
 int negated = -a;

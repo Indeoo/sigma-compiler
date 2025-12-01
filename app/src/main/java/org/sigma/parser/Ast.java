@@ -48,6 +48,24 @@ public class Ast {
         public WhileStatement(Expression cond, Statement body) { this.cond = cond; this.body = body; }
     }
 
+    public static class ForEachStatement implements Statement {
+        public final String typeName; // null if implicit
+        public final String iteratorName;
+        public final Expression iterable;
+        public final Statement body;
+        public final int line, col;
+        public ForEachStatement(String typeName, String iteratorName, Expression iterable,
+                                Statement body, int line, int col) {
+            this.typeName = typeName;
+            this.iteratorName = iteratorName;
+            this.iterable = iterable;
+            this.body = body;
+            this.line = line;
+            this.col = col;
+        }
+        public boolean hasExplicitType() { return typeName != null; }
+    }
+
     public static class ReturnStatement implements Statement {
         public final Expression expr; public final int line, col; public ReturnStatement(Expression e, int line, int col) { this.expr = e; this.line=line; this.col=col; }
     }

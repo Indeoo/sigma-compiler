@@ -97,6 +97,20 @@ public class ParseResult {
             printStatement(ws.body, sb, indent + 2);
             return;
         }
+        if (stmt instanceof Ast.ForEachStatement) {
+            Ast.ForEachStatement fs = (Ast.ForEachStatement) stmt;
+            indent(sb, indent).append("[ForEachStatement]").append('\n');
+            indent(sb, indent + 1).append("[Iterator] ");
+            if (fs.hasExplicitType()) {
+                sb.append(fs.typeName).append(' ');
+            }
+            sb.append(fs.iteratorName).append('\n');
+            indent(sb, indent + 1).append("[Iterable]").append('\n');
+            printExpression(fs.iterable, sb, indent + 2);
+            indent(sb, indent + 1).append("[Body]").append('\n');
+            printStatement(fs.body, sb, indent + 2);
+            return;
+        }
         if (stmt instanceof Ast.ReturnStatement) {
             Ast.ReturnStatement rs = (Ast.ReturnStatement) stmt;
             indent(sb, indent).append("[ReturnStatement]").append('\n');

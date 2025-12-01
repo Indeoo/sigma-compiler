@@ -179,7 +179,8 @@ public class ParserContext {
 
             // Stop before statement/declaration keywords
             if (type == TokenType.CLASS || type == TokenType.IF ||
-                type == TokenType.WHILE || type == TokenType.RETURN ||
+                type == TokenType.FOR || type == TokenType.WHILE ||
+                type == TokenType.RETURN ||
                 type == TokenType.INT || type == TokenType.DOUBLE ||
                 type == TokenType.FLOAT || type == TokenType.BOOLEAN ||
                 type == TokenType.STRING_TYPE || type == TokenType.VOID ||

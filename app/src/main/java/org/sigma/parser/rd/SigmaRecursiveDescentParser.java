@@ -329,7 +329,7 @@ public class SigmaRecursiveDescentParser {
     }
 
     /**
-     * statement: assignmentStatement | expressionStatement | ifStatement | whileStatement | returnStatement | block
+     * statement: assignmentStatement | expressionStatement | ifStatement | forStatement | whileStatement | returnStatement | block
      */
     private GrammarRule<Ast.Statement> statement() {
         return ctx -> {
@@ -337,6 +337,9 @@ public class SigmaRecursiveDescentParser {
             Ast.Statement stmt;
 
             stmt = ifStatement().parse(ctx);
+            if (stmt != null) return stmt;
+
+            stmt = forStatement().parse(ctx);
             if (stmt != null) return stmt;
 
             stmt = whileStatement().parse(ctx);
@@ -413,22 +416,25 @@ public class SigmaRecursiveDescentParser {
     }
 
     /**
-     * ifStatement: IF LPAREN expression RPAREN statement (ELSE statement)?
+     * ifStatement: IF ifCondition statement (ELSE statement)?
      */
     private GrammarRule<Ast.IfStatement> ifStatement() {
         return ctx -> {
-            if (ctx.match(TokenType.IF) == null) {
+            SigmaToken ifToken = ctx.match(TokenType.IF);
+            if (ifToken == null) {
                 return null;
             }
 
-            ctx.expect(TokenType.LPAREN, "Expected '(' after 'if'");
+            boolean hasParens = ctx.match(TokenType.LPAREN) != null;
 
             Ast.Expression cond = expression().parse(ctx);
             if (cond == null) {
                 ctx.error("Expected condition expression");
             }
 
-            ctx.expect(TokenType.RPAREN, "Expected ')' after if condition");
+            if (hasParens) {
+                ctx.expect(TokenType.RPAREN, "Expected ')' after if condition");
+            }
 
             Ast.Statement thenBranch = statement().parse(ctx);
             if (thenBranch == null) {
@@ -444,6 +450,71 @@ public class SigmaRecursiveDescentParser {
             }
 
             return new Ast.IfStatement(cond, thenBranch, elseBranch);
+        };
+    }
+
+    /**
+     * forStatement: FOR forClause statement
+     */
+    private GrammarRule<Ast.ForEachStatement> forStatement() {
+        return ctx -> {
+            SigmaToken forToken = ctx.match(TokenType.FOR);
+            if (forToken == null) {
+                return null;
+            }
+
+            boolean hasParens = ctx.match(TokenType.LPAREN) != null;
+
+            String typeName = null;
+            SigmaToken iteratorToken = null;
+
+            int clauseStart = ctx.savePosition();
+            String possibleType = type().parse(ctx);
+            if (possibleType != null) {
+                SigmaToken maybeIterator = ctx.match(TokenType.IDENTIFIER);
+                if (maybeIterator != null) {
+                    typeName = possibleType;
+                    iteratorToken = maybeIterator;
+                } else {
+                    ctx.restorePosition(clauseStart);
+                }
+            } else {
+                ctx.restorePosition(clauseStart);
+            }
+
+            if (iteratorToken == null) {
+                SigmaToken idToken = ctx.match(TokenType.IDENTIFIER);
+                if (idToken == null) {
+                    ctx.error("Expected iterator variable in for-loop");
+                    return null;
+                }
+                iteratorToken = idToken;
+            }
+
+            ctx.expect(TokenType.IN, "Expected 'in' in for-loop");
+
+            Ast.Expression iterableExpr = expression().parse(ctx);
+            if (iterableExpr == null) {
+                ctx.error("Expected iterable expression after 'in'");
+            }
+
+            if (hasParens) {
+                ctx.expect(TokenType.RPAREN, "Expected ')' after for clause");
+            }
+
+            Ast.Statement body = statement().parse(ctx);
+            if (body == null) {
+                ctx.error("Expected statement after for-loop");
+            }
+
+            return new Ast.ForEachStatement(
+                typeName,
+                iteratorToken.getText(),
+                iterableExpr,
+                body,
+                iteratorToken.getLine(),
+                iteratorToken.getCharPositionInLine()
+            );
         };
     }
 
