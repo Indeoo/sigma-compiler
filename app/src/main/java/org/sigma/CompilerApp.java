@@ -20,7 +20,7 @@ import java.util.Map;
 public class CompilerApp {
     private static final Path POSTFIX_OUTPUT = Path.of("app/src/main/resources/postfix/output.postfix");
     private static final Path JVM_OUTPUT = Path.of("app/build/Script.class");
-    private static final String BACKEND = "POST"; // or "JVM"
+    private static final String BACKEND = "JVM"; // or "JVM"
 
     public static void main(String[] args) throws IOException {
         Path p;
@@ -40,11 +40,6 @@ public class CompilerApp {
         String src = Files.readString(p);
 
         List<SigmaToken> list_token = run_lexer(src);
-
-//        for (SigmaToken t : list_token) {
-//            System.out.printf("%s\t%s\t(line:%d col:%d)\n",
-//                    t.getType().name(), t.getText(), t.getLine(), t.getCharPositionInLine());
-//        }
 
         ParseResult parseResult = new SigmaParserWrapper().parse(list_token);
 
@@ -129,7 +124,7 @@ public class CompilerApp {
 
     private static void emitJvm(SemanticResult semanticResult) throws IOException {
         JvmClassGenerator generator = new JvmClassGenerator();
-        byte[] bytes = generator.generate(semanticResult.getAst());
+        byte[] bytes = generator.generate(semanticResult);
         Files.createDirectories(JVM_OUTPUT.getParent());
         Files.write(JVM_OUTPUT, bytes);
         System.out.println("Generated Script.class at: " + JVM_OUTPUT.toAbsolutePath());

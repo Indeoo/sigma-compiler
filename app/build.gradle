@@ -114,3 +114,11 @@ task runAstPrinter(type: JavaExec) {
     mainClass = 'org.sigma.TestAstPrinter'
     classpath = sourceSets.main.runtimeClasspath
 }
+
+task runAntlrApp(type: JavaExec) {
+    group = 'application'
+    description = 'Runs the ANTLR-based Sigma interpreter'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'org.sigma.ANTLRCompilerApp'
+    args = [project.rootDir.toString() + '/app/src/main/resources/source.groovy']
+}
