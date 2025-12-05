@@ -496,6 +496,7 @@ public class SemanticAnalyzer {
         currentClassInfo = classInfos.get(classDecl.name);
         // Enter class scope
         symbolTable.enterScope(Scope.ScopeType.CLASS);
+        populateClassScope(classDecl);
 
         // Re-add members to scope (already collected in pass 1)
         for (Ast.Statement member : classDecl.members) {
@@ -521,6 +522,40 @@ public class SemanticAnalyzer {
 
         symbolTable.exitScope();
         currentClassInfo = previousClass;
+    }
+
+    /**
+     * Populate the newly-entered class scope with its declared members so lookups inside
+     * methods resolve fields/methods defined in the same class.
+     */
+    private void populateClassScope(Ast.ClassDeclaration classDecl) {
+        for (Ast.Statement member : classDecl.members) {
+            if (member instanceof Ast.MethodDeclaration) {
+                Ast.MethodDeclaration method = (Ast.MethodDeclaration) member;
+                SigmaType returnType = typeRegistry.resolve(method.returnType);
+                defineClassMemberSymbol(method.name, returnType, Symbol.SymbolKind.METHOD,
+                    method.line, method.col);
+            } else if (member instanceof Ast.VariableDeclaration) {
+                Ast.VariableDeclaration field = (Ast.VariableDeclaration) member;
+                SigmaType fieldType = typeRegistry.resolve(field.typeName);
+                Symbol.SymbolKind kind = field.isConstant
+                    ? Symbol.SymbolKind.CONSTANT
+                    : Symbol.SymbolKind.FIELD;
+                defineClassMemberSymbol(field.name, fieldType, kind, field.line, field.col);
+            } else if (member instanceof Ast.FieldDeclaration) {
+                Ast.FieldDeclaration field = (Ast.FieldDeclaration) member;
+                SigmaType fieldType = typeRegistry.resolve(field.typeName);
+                defineClassMemberSymbol(field.name, fieldType, Symbol.SymbolKind.FIELD,
+                    field.line, field.col);
+            }
+        }
+    }
+
+    private void defineClassMemberSymbol(String name, SigmaType type, Symbol.SymbolKind kind,
+                                         int line, int col) {
+        if (!symbolTable.isDefinedLocal(name)) {
+            symbolTable.define(name, type, kind, line, col);
+        }
     }
 
     // ==================== EXPRESSION TYPE INFERENCE ====================
