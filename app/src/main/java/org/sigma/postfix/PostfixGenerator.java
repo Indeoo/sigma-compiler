@@ -2,6 +2,7 @@ package org.sigma.postfix;
 
 import org.sigma.parser.Ast;
 import org.sigma.semantics.SemanticResult;
+import org.sigma.semantics.SigmaType;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -16,20 +17,42 @@ import java.util.Set;
  * synthetic Script wrapper (variable declarations, assignments, if/while, expressions).
  */
 public class PostfixGenerator {
+    private Map<Ast.Expression, SigmaType> expressionTypes = Map.of();
+    private Map<String, PostfixFunction> functionsByName = Map.of();
 
-    public PostfixProgram generate(SemanticResult semanticResult) {
+    public PostfixBundle generate(SemanticResult semanticResult) {
+        this.expressionTypes = semanticResult.getExpressionTypes();
+
         Ast.MethodDeclaration scriptEntry = findScriptEntry(semanticResult.getAst());
         if (scriptEntry == null) {
             throw new IllegalStateException("Script.run() method not found. Did you run ScriptWrappingTransformer?");
         }
 
-        GenerationContext ctx = new GenerationContext();
-        ctx.functionEndLabel = ctx.newLabel();
-        emitBlock(scriptEntry.body, ctx);
-        ctx.defineLabel(ctx.functionEndLabel);
+        List<Ast.MethodDeclaration> helperMethods = findHelperMethods(semanticResult.getAst(), scriptEntry);
+        List<PostfixFunction> functions = buildFunctionMetadata(helperMethods);
+        this.functionsByName = new LinkedHashMap<>();
+        for (PostfixFunction function : functions) {
+            functionsByName.put(function.name(), function);
+        }
 
-        Map<String, Integer> labelTable = ctx.buildLabelTable();
-        return new PostfixProgram(ctx.variables, labelTable, ctx.instructions);
+        GenerationContext mainCtx = GenerationContext.forMain();
+        mainCtx.functionEndLabel = mainCtx.newLabel();
+        emitBlock(scriptEntry.body, mainCtx);
+        mainCtx.defineLabel(mainCtx.functionEndLabel);
+        PostfixProgram mainProgram = mainCtx.buildProgram(functions);
+
+        Map<String, PostfixProgram> functionPrograms = new LinkedHashMap<>();
+        for (Ast.MethodDeclaration method : helperMethods) {
+            String returnType = mapType(method.returnType);
+            GenerationContext fnCtx = GenerationContext.forFunction(returnType);
+            registerParameters(method, fnCtx);
+            emitBlock(method.body, fnCtx);
+            fnCtx.ensureFunctionTermination(method.name);
+            PostfixProgram fnProgram = fnCtx.buildProgram(functions);
+            functionPrograms.put(method.name, fnProgram);
+        }
+
+        return new PostfixBundle(mainProgram, functionPrograms, functions);
     }
 
     private Ast.MethodDeclaration findScriptEntry(Ast.CompilationUnit unit) {
@@ -51,6 +74,41 @@ public class PostfixGenerator {
         return null;
     }
 
+    private List<Ast.MethodDeclaration> findHelperMethods(Ast.CompilationUnit unit, Ast.MethodDeclaration runMethod) {
+        List<Ast.MethodDeclaration> helpers = new ArrayList<>();
+        for (Ast.Statement stmt : unit.statements) {
+            if (stmt instanceof Ast.ClassDeclaration) {
+                Ast.ClassDeclaration cls = (Ast.ClassDeclaration) stmt;
+                if ("Script".equals(cls.name)) {
+                    for (Ast.Statement member : cls.members) {
+                        if (member instanceof Ast.MethodDeclaration) {
+                            Ast.MethodDeclaration method = (Ast.MethodDeclaration) member;
+                            if (!"run".equals(method.name)) {
+                                helpers.add(method);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return helpers;
+    }
+
+    private List<PostfixFunction> buildFunctionMetadata(List<Ast.MethodDeclaration> methods) {
+        List<PostfixFunction> functions = new ArrayList<>();
+        for (Ast.MethodDeclaration method : methods) {
+            String type = mapType(method.returnType);
+            functions.add(new PostfixFunction(method.name, type, method.parameters.size()));
+        }
+        return functions;
+    }
+
+    private void registerParameters(Ast.MethodDeclaration method, GenerationContext ctx) {
+        for (Ast.Parameter parameter : method.parameters) {
+            ctx.registerVariable(parameter.name, mapType(parameter.type));
+        }
+    }
+
     private void emitBlock(Ast.Block block, GenerationContext ctx) {
         for (Ast.Statement stmt : block.statements) {
             emitStatement(stmt, ctx);
@@ -63,8 +121,11 @@ public class PostfixGenerator {
         } else if (stmt instanceof Ast.Assignment) {
             emitAssignment((Ast.Assignment) stmt, ctx);
         } else if (stmt instanceof Ast.ExpressionStatement) {
-            emitExpression(((Ast.ExpressionStatement) stmt).expr, ctx);
-            ctx.instructions.add(new PostfixInstruction("POP", "stack_op"));
+            Ast.Expression expr = ((Ast.ExpressionStatement) stmt).expr;
+            emitExpression(expr, ctx);
+            if (expressionProducesValue(expr)) {
+                ctx.instructions.add(new PostfixInstruction("POP", "stack_op"));
+            }
         } else if (stmt instanceof Ast.PrintStatement) {
             emitExpression(((Ast.PrintStatement) stmt).expr, ctx);
             ctx.instructions.add(new PostfixInstruction("PRINT", "out_op"));
@@ -75,15 +136,7 @@ public class PostfixGenerator {
         } else if (stmt instanceof Ast.Block) {
             emitBlock((Ast.Block) stmt, ctx);
         } else if (stmt instanceof Ast.ReturnStatement) {
-            Ast.ReturnStatement ret = (Ast.ReturnStatement) stmt;
-            if (ret.expr != null) {
-                emitExpression(ret.expr, ctx);
-                ctx.instructions.add(new PostfixInstruction("POP", "stack_op"));
-            }
-            if (ctx.functionEndLabel != null) {
-                ctx.instructions.add(new PostfixInstruction(ctx.functionEndLabel, "label"));
-                ctx.instructions.add(new PostfixInstruction("JMP", "jump"));
-            }
+            emitReturn((Ast.ReturnStatement) stmt, ctx);
         } else {
             throw new UnsupportedOperationException("Unsupported statement for postfix backend: " + stmt.getClass().getSimpleName());
         }
@@ -98,10 +151,43 @@ public class PostfixGenerator {
         }
     }
 
+    private boolean expressionProducesValue(Ast.Expression expr) {
+        if (expressionTypes == null) {
+            return true;
+        }
+        SigmaType type = expressionTypes.get(expr);
+        return type == null || !"void".equals(type.getName());
+    }
+
     private void emitAssignment(Ast.Assignment assignment, GenerationContext ctx) {
         ctx.instructions.add(new PostfixInstruction(assignment.name, "l-val"));
         emitExpression(assignment.value, ctx);
         ctx.instructions.add(new PostfixInstruction("=", "assign_op"));
+    }
+
+    private void emitReturn(Ast.ReturnStatement ret, GenerationContext ctx) {
+        if (ctx.isFunction) {
+            if (!"void".equals(ctx.returnType)) {
+                if (ret.expr == null) {
+                    throw new UnsupportedOperationException("Function must return a value of type " + ctx.returnType);
+                }
+                emitExpression(ret.expr, ctx);
+            } else if (ret.expr != null) {
+                emitExpression(ret.expr, ctx);
+                ctx.instructions.add(new PostfixInstruction("POP", "stack_op"));
+            }
+            ctx.instructions.add(new PostfixInstruction("RET", "RET"));
+            ctx.hasReturn = true;
+        } else {
+            if (ret.expr != null) {
+                emitExpression(ret.expr, ctx);
+                ctx.instructions.add(new PostfixInstruction("POP", "stack_op"));
+            }
+            if (ctx.functionEndLabel != null) {
+                ctx.instructions.add(new PostfixInstruction(ctx.functionEndLabel, "label"));
+                ctx.instructions.add(new PostfixInstruction("JMP", "jump"));
+            }
+        }
     }
 
     private void emitIfStatement(Ast.IfStatement ifStmt, GenerationContext ctx) {
@@ -160,6 +246,8 @@ public class PostfixGenerator {
             Ast.Unary unary = (Ast.Unary) expr;
             emitExpression(unary.expr, ctx);
             ctx.instructions.add(new PostfixInstruction(mapUnaryOperator(unary.op), unaryTokenType(unary.op)));
+        } else if (expr instanceof Ast.Call) {
+            emitCall((Ast.Call) expr, ctx);
         } else {
             throw new UnsupportedOperationException("Unsupported expression for postfix backend: " + expr.getClass().getSimpleName());
         }
@@ -240,6 +328,20 @@ public class PostfixGenerator {
         }
     }
 
+    private void emitCall(Ast.Call call, GenerationContext ctx) {
+        if (!(call.target instanceof Ast.Identifier)) {
+            throw new UnsupportedOperationException("Only simple function calls are supported in Postfix backend.");
+        }
+        Ast.Identifier id = (Ast.Identifier) call.target;
+        for (Ast.Expression arg : call.args) {
+            emitExpression(arg, ctx);
+        }
+        if (!functionsByName.containsKey(id.name)) {
+            throw new UnsupportedOperationException("Function '" + id.name + "' is not supported by the Postfix backend.");
+        }
+        ctx.instructions.add(new PostfixInstruction(id.name, "CALL"));
+    }
+
     private String encodeStringLiteral(String value) {
         StringBuilder sb = new StringBuilder(value.length() + 2);
         sb.append('"');
@@ -281,6 +383,8 @@ public class PostfixGenerator {
                 return "bool";
             case "String":
                 return "string";
+            case "void":
+                return "void";
             default:
                 return typeName;
         }
@@ -290,8 +394,24 @@ public class PostfixGenerator {
         private final List<PostfixInstruction> instructions = new ArrayList<>();
         private final Map<String, String> variables = new LinkedHashMap<>();
         private final Set<String> definedLabels = new HashSet<>();
+        private final boolean isFunction;
+        private final String returnType;
+        private boolean hasReturn;
         private int labelCounter = 1;
         private String functionEndLabel;
+
+        private GenerationContext(boolean isFunction, String returnType) {
+            this.isFunction = isFunction;
+            this.returnType = returnType;
+        }
+
+        static GenerationContext forMain() {
+            return new GenerationContext(false, "void");
+        }
+
+        static GenerationContext forFunction(String returnType) {
+            return new GenerationContext(true, returnType);
+        }
 
         void registerVariable(String name, String type) {
             variables.putIfAbsent(name, type);
@@ -316,6 +436,23 @@ public class PostfixGenerator {
                 }
             }
             return table;
+        }
+
+        PostfixProgram buildProgram(List<PostfixFunction> functions) {
+            return new PostfixProgram(variables, buildLabelTable(), List.copyOf(instructions), functions);
+        }
+
+        void ensureFunctionTermination(String functionName) {
+            if (!isFunction) {
+                return;
+            }
+            if ("void".equals(returnType)) {
+                if (!hasReturn) {
+                    instructions.add(new PostfixInstruction("RET", "RET"));
+                }
+            } else if (!hasReturn) {
+                throw new IllegalStateException("Function '" + functionName + "' must return a value.");
+            }
         }
     }
 }

@@ -11,13 +11,16 @@ public class PostfixProgram {
     private final Map<String, String> variables;
     private final Map<String, Integer> labels;
     private final List<PostfixInstruction> instructions;
+    private final List<PostfixFunction> functions;
 
     public PostfixProgram(Map<String, String> variables,
                           Map<String, Integer> labels,
-                          List<PostfixInstruction> instructions) {
+                          List<PostfixInstruction> instructions,
+                          List<PostfixFunction> functions) {
         this.variables = new LinkedHashMap<>(variables);
         this.labels = new LinkedHashMap<>(labels);
         this.instructions = List.copyOf(instructions);
+        this.functions = List.copyOf(functions);
     }
 
     public Map<String, String> getVariables() {
@@ -32,6 +35,10 @@ public class PostfixProgram {
         return instructions;
     }
 
+    public List<PostfixFunction> getFunctions() {
+        return functions;
+    }
+
     public String toText() {
         StringBuilder sb = new StringBuilder();
         sb.append(".target: Postfix Machine\n");
@@ -43,6 +50,22 @@ public class PostfixProgram {
         } else {
             for (Map.Entry<String, String> entry : variables.entrySet()) {
                 sb.append("\t").append(entry.getKey()).append("\t").append(entry.getValue()).append("\n");
+            }
+            sb.append(")\n\n");
+        }
+
+        sb.append(".funcs(\n");
+        if (functions.isEmpty()) {
+            sb.append(")\n\n");
+        } else {
+            for (PostfixFunction func : functions) {
+                sb.append("\t")
+                  .append(func.name())
+                  .append("\t")
+                  .append(func.returnType())
+                  .append("\t")
+                  .append(func.parameterCount())
+                  .append("\n");
             }
             sb.append(")\n\n");
         }
