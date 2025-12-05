@@ -642,4 +642,38 @@ public class SemanticAnalyzerTest {
         assertTrue(result.isSuccessful(), result::getErrorsAsString);
         assertEquals(TypeRegistry.INT, result.getExpressionType(aRef));
     }
+
+    @Test
+    void testPrintStatementAcceptsString() {
+        SemanticAnalyzer analyzer = new SemanticAnalyzer();
+        Ast.PrintStatement printStmt = new Ast.PrintStatement(
+            new Ast.StringLiteral("hello", 0, 0),
+            0,
+            0
+        );
+        Ast.CompilationUnit ast = new Ast.CompilationUnit(List.of(printStmt));
+
+        SemanticResult result = analyzer.analyze(ast);
+        assertTrue(result.isSuccessful());
+    }
+
+    @Test
+    void testPrintStatementRejectsNonPrintableType() {
+        SemanticAnalyzer analyzer = new SemanticAnalyzer();
+
+        Ast.ClassDeclaration fooClass = new Ast.ClassDeclaration("Foo", List.of(), 0, 0);
+        Ast.VariableDeclaration fooVar = new Ast.VariableDeclaration("Foo", "foo", null, 0, 0);
+        Ast.PrintStatement printStmt = new Ast.PrintStatement(
+            new Ast.Identifier("foo", 0, 0),
+            0,
+            0
+        );
+
+        Ast.CompilationUnit ast = new Ast.CompilationUnit(List.of(fooClass, fooVar, printStmt));
+        SemanticResult result = analyzer.analyze(ast);
+
+        assertFalse(result.isSuccessful());
+        assertTrue(result.getErrors().stream()
+            .anyMatch(err -> err.getMessage().contains("print(...)")));
+    }
 }

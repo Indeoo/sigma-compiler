@@ -75,6 +75,12 @@ public class ParseResult {
             printExpression(((Ast.ExpressionStatement) stmt).expr, sb, indent + 1);
             return;
         }
+        if (stmt instanceof Ast.PrintStatement) {
+            Ast.PrintStatement ps = (Ast.PrintStatement) stmt;
+            indent(sb, indent).append("[PrintStatement]").append('\n');
+            printExpression(ps.expr, sb, indent + 1);
+            return;
+        }
         if (stmt instanceof Ast.IfStatement) {
             Ast.IfStatement ifs = (Ast.IfStatement) stmt;
             indent(sb, indent).append("[IfStatement]").append('\n');

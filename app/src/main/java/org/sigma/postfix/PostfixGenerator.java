@@ -65,6 +65,9 @@ public class PostfixGenerator {
         } else if (stmt instanceof Ast.ExpressionStatement) {
             emitExpression(((Ast.ExpressionStatement) stmt).expr, ctx);
             ctx.instructions.add(new PostfixInstruction("POP", "stack_op"));
+        } else if (stmt instanceof Ast.PrintStatement) {
+            emitExpression(((Ast.PrintStatement) stmt).expr, ctx);
+            ctx.instructions.add(new PostfixInstruction("PRINT", "out_op"));
         } else if (stmt instanceof Ast.IfStatement) {
             emitIfStatement((Ast.IfStatement) stmt, ctx);
         } else if (stmt instanceof Ast.WhileStatement) {
@@ -143,7 +146,9 @@ public class PostfixGenerator {
         } else if (expr instanceof Ast.BooleanLiteral) {
             ctx.instructions.add(new PostfixInstruction(Boolean.toString(((Ast.BooleanLiteral) expr).value), "bool"));
         } else if (expr instanceof Ast.StringLiteral) {
-            ctx.instructions.add(new PostfixInstruction("\"" + ((Ast.StringLiteral) expr).value + "\"", "string"));
+            ctx.instructions.add(new PostfixInstruction(
+                encodeStringLiteral(((Ast.StringLiteral) expr).value),
+                "string"));
         } else if (expr instanceof Ast.Identifier) {
             ctx.instructions.add(new PostfixInstruction(((Ast.Identifier) expr).name, "r-val"));
         } else if (expr instanceof Ast.Binary) {
@@ -233,6 +238,36 @@ public class PostfixGenerator {
             default:
                 throw new UnsupportedOperationException("Unsupported unary operator token type: " + op);
         }
+    }
+
+    private String encodeStringLiteral(String value) {
+        StringBuilder sb = new StringBuilder(value.length() + 2);
+        sb.append('"');
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            switch (c) {
+                case '\n':
+                    sb.append("\\n");
+                    break;
+                case '\t':
+                    sb.append("\\t");
+                    break;
+                case '\r':
+                    sb.append("\\r");
+                    break;
+                case '"':
+                    sb.append("\\\"");
+                    break;
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+                default:
+                    sb.append(c);
+                    break;
+            }
+        }
+        sb.append('"');
+        return sb.toString();
     }
 
     private String mapType(String typeName) {

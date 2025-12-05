@@ -17,6 +17,7 @@ public enum TokenType {
     NULL,       // "null"
     IN,         // "in"
     NEW,        // "new"
+    PRINT,      // "print"
 
     // Primitive type keywords
     INT,        // "int"

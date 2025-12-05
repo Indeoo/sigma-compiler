@@ -19,6 +19,16 @@ public class Ast {
         public ExpressionStatement(Expression e, int line, int col) { this.expr = e; this.line = line; this.col = col; }
     }
 
+    public static class PrintStatement implements Statement {
+        public final Expression expr;
+        public final int line, col;
+        public PrintStatement(Expression expr, int line, int col) {
+            this.expr = expr;
+            this.line = line;
+            this.col = col;
+        }
+    }
+
     public static class VariableDeclaration implements Statement {
         public final String typeName; // e.g. "int", "double", "String"
         public final String name;

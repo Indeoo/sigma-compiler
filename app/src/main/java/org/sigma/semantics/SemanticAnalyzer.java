@@ -237,6 +237,8 @@ public class SemanticAnalyzer {
             checkClassDeclaration((Ast.ClassDeclaration) stmt);
         } else if (stmt instanceof Ast.ForEachStatement) {
             checkForEachStatement((Ast.ForEachStatement) stmt);
+        } else if (stmt instanceof Ast.PrintStatement) {
+            checkPrintStatement((Ast.PrintStatement) stmt);
         }
     }
 
@@ -444,6 +446,31 @@ public class SemanticAnalyzer {
     private void checkBlock(Ast.Block block) {
         for (Ast.Statement stmt : block.statements) {
             checkStatement(stmt);
+        }
+    }
+
+    /**
+     * Check print statement
+     */
+    private void checkPrintStatement(Ast.PrintStatement printStmt) {
+        SigmaType valueType = inferExpressionType(printStmt.expr);
+        if (valueType == TypeRegistry.ERROR) {
+            return;
+        }
+
+        boolean printable =
+            valueType.equals(TypeRegistry.INT) ||
+            valueType.equals(TypeRegistry.DOUBLE) ||
+            valueType.equals(TypeRegistry.FLOAT) ||
+            valueType.equals(TypeRegistry.BOOLEAN) ||
+            valueType.equals(TypeRegistry.STRING);
+
+        if (!printable) {
+            errors.add(new SemanticError(
+                SemanticError.SemanticErrorType.TYPE_MISMATCH,
+                "print(...) cannot output type: " + valueType,
+                printStmt.line, printStmt.col
+            ));
         }
     }
 

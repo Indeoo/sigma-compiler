@@ -21,9 +21,9 @@ public class SigmaParserWrapper {
         }
 
         Ast.CompilationUnit wrapped = ScriptWrappingTransformer.wrap(baseResult.getAst());
-        //return ParseResult.success(wrapped);
+        return ParseResult.success(wrapped);
         // # NO TRANSFORMATION
-        return ParseResult.success(baseResult.getAst());
+        //return ParseResult.success(baseResult.getAst());
     }
 
     /**

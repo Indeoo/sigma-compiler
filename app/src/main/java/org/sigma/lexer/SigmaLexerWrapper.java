@@ -22,6 +22,7 @@ public class SigmaLexerWrapper {
             Map.entry("null", TokenType.NULL),
             Map.entry("in", TokenType.IN),
             Map.entry("new", TokenType.NEW),
+            Map.entry("print", TokenType.PRINT),
             Map.entry("int", TokenType.INT),
             Map.entry("double", TokenType.DOUBLE),
             Map.entry("float", TokenType.FLOAT),

@@ -348,6 +348,9 @@ public class SigmaRecursiveDescentParser {
             stmt = returnStatement().parse(ctx);
             if (stmt != null) return stmt;
 
+            stmt = printStatement().parse(ctx);
+            if (stmt != null) return stmt;
+
             stmt = block().parse(ctx);
             if (stmt != null) return stmt;
 
@@ -412,6 +415,32 @@ public class SigmaRecursiveDescentParser {
             ctx.match(TokenType.SEMI); // Optional semicolon
 
             return new Ast.ExpressionStatement(expr, firstToken.getLine(), firstToken.getCharPositionInLine());
+        };
+    }
+
+    /**
+     * printStatement: PRINT LPAREN expression RPAREN SEMI
+     */
+    private GrammarRule<Ast.PrintStatement> printStatement() {
+        return ctx -> {
+            int startPos = ctx.savePosition();
+            SigmaToken keyword = ctx.match(TokenType.PRINT);
+            if (keyword == null) {
+                ctx.restorePosition(startPos);
+                return null;
+            }
+
+            ctx.expect(TokenType.LPAREN, "Expected '(' after 'print'");
+            Ast.Expression expr = expression().parse(ctx);
+            if (expr == null) {
+                ctx.error("Expected expression inside print statement");
+            }
+            ctx.expect(TokenType.RPAREN, "Expected ')' after print expression");
+            ctx.expect(TokenType.SEMI, "Expected ';' after print statement");
+
+            return new Ast.PrintStatement(expr,
+                keyword.getLine(),
+                keyword.getCharPositionInLine());
         };
     }
 
@@ -879,7 +908,11 @@ public class SigmaRecursiveDescentParser {
 
                 case STRING:
                     ctx.consume();
-                    return new Ast.StringLiteral(token.getText(), token.getLine(), token.getCharPositionInLine());
+                    return new Ast.StringLiteral(
+                        decodeStringLiteral(token.getText()),
+                        token.getLine(),
+                        token.getCharPositionInLine()
+                    );
 
                 case TRUE:
                     ctx.consume();
@@ -897,6 +930,43 @@ public class SigmaRecursiveDescentParser {
                     return null;
             }
         };
+    }
+
+    private String decodeStringLiteral(String raw) {
+        if (raw == null || raw.length() < 2) {
+            return "";
+        }
+        String inner = raw.substring(1, raw.length() - 1);
+        StringBuilder sb = new StringBuilder(inner.length());
+        for (int i = 0; i < inner.length(); i++) {
+            char c = inner.charAt(i);
+            if (c == '\\' && i + 1 < inner.length()) {
+                char esc = inner.charAt(++i);
+                switch (esc) {
+                    case 'n':
+                        sb.append('\n');
+                        break;
+                    case 't':
+                        sb.append('\t');
+                        break;
+                    case 'r':
+                        sb.append('\r');
+                        break;
+                    case '"':
+                        sb.append('"');
+                        break;
+                    case '\\':
+                        sb.append('\\');
+                        break;
+                    default:
+                        sb.append(esc);
+                        break;
+                }
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 
     // ===== Public API =====
