@@ -104,7 +104,7 @@ public class CompilerApp {
         return Path.of("src/main/resources/source.groovy");
     }
 
-    private static void emitPostfix(SemanticResult semanticResult) throws IOException {
+    static void emitPostfix(SemanticResult semanticResult) throws IOException {
         PostfixGenerator postfixGenerator = new PostfixGenerator();
         PostfixBundle bundle = postfixGenerator.generate(semanticResult);
 
@@ -122,7 +122,7 @@ public class CompilerApp {
         }
     }
 
-    private static void emitJvm(SemanticResult semanticResult) throws IOException {
+    static void emitJvm(SemanticResult semanticResult) throws IOException {
         JvmClassGenerator generator = new JvmClassGenerator();
         byte[] bytes = generator.generate(semanticResult);
         Files.createDirectories(JVM_OUTPUT.getParent());

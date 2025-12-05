@@ -9,9 +9,6 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNode;
-import org.example.parser.SigmaBaseVisitor;
 import org.example.parser.SigmaLexer;
 import org.example.parser.SigmaParser;
 import org.sigma.antlr.SigmaAstBuilder;
@@ -21,16 +18,12 @@ import org.sigma.semantics.SemanticAnalyzer;
 import org.sigma.semantics.SemanticResult;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
+
+import static org.sigma.CompilerApp.emitJvm;
+import static org.sigma.CompilerApp.emitPostfix;
 
 /**
  * Minimal ANTLR-driven interpreter for the Sigma grammar.
@@ -38,6 +31,7 @@ import java.util.Objects;
  * if/else blocks, while loops, and built-in print/println calls.
  */
 public final class ANTLRCompilerApp {
+    private static final String BACKEND = "JVM"; // or "JVM"
     private static final Path DEFAULT_SOURCE = Path.of("app/src/main/resources/source.groovy");
 
     public static void main(String[] args) throws IOException {
@@ -72,6 +66,22 @@ public final class ANTLRCompilerApp {
 
         if (!semanticResult.isSuccessful()) {
             System.exit(1);
+        }
+
+        // Generate Postfix IR for PSM.py
+        if (semanticResult.isSuccessful()) {
+            System.out.println("\n" + "=".repeat(70));
+            if ("JVM".equalsIgnoreCase(BACKEND)) {
+                System.out.println("JVM BYTECODE OUTPUT");
+                System.out.println("=".repeat(70));
+                emitJvm(semanticResult);
+            } else {
+                System.out.println("POSTFIX INTERMEDIATE REPRESENTATION");
+                System.out.println("=".repeat(70));
+                emitPostfix(semanticResult);
+            }
+        } else {
+            System.out.println("\nSkipping postfix generation due to semantic errors.");
         }
     }
 
