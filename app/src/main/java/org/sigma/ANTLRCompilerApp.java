@@ -4,10 +4,8 @@ import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
-import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.example.parser.SigmaLexer;
 import org.example.parser.SigmaParser;
@@ -20,10 +18,8 @@ import org.sigma.semantics.SemanticResult;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
 
 import static org.sigma.CompilerApp.emitJvm;
-import static org.sigma.CompilerApp.emitPostfix;
 
 /**
  * Minimal ANTLR-driven interpreter for the Sigma grammar.
@@ -32,7 +28,7 @@ import static org.sigma.CompilerApp.emitPostfix;
  */
 public final class ANTLRCompilerApp {
     private static final String BACKEND = "JVM"; // or "JVM"
-    private static final Path DEFAULT_SOURCE = Path.of("app/src/main/resources/source.groovy");
+    private static final Path DEFAULT_SOURCE = Path.of("app/src/main/resources/source_antlr.groovy");
 
     public static void main(String[] args) throws IOException {
         Path source = args.length > 0 ? Path.of(args[0]) : DEFAULT_SOURCE;
@@ -71,15 +67,9 @@ public final class ANTLRCompilerApp {
         // Generate Postfix IR for PSM.py
         if (semanticResult.isSuccessful()) {
             System.out.println("\n" + "=".repeat(70));
-            if ("JVM".equalsIgnoreCase(BACKEND)) {
-                System.out.println("JVM BYTECODE OUTPUT");
-                System.out.println("=".repeat(70));
-                emitJvm(semanticResult);
-            } else {
-                System.out.println("POSTFIX INTERMEDIATE REPRESENTATION");
-                System.out.println("=".repeat(70));
-                emitPostfix(semanticResult);
-            }
+            System.out.println("JVM BYTECODE OUTPUT");
+            System.out.println("=".repeat(70));
+            emitJvm(semanticResult);
         } else {
             System.out.println("\nSkipping postfix generation due to semantic errors.");
         }
@@ -105,144 +95,6 @@ public final class ANTLRCompilerApp {
             String sourceName = source != null ? source.toAbsolutePath().toString() : "<input>";
             throw new ParseCancellationException(
                 "Syntax error in " + sourceName + " at line " + line + ":" + charPositionInLine + " - " + msg);
-        }
-    }
-
-    public static final class Value {
-        enum Type {
-            INT, DOUBLE, STRING, BOOL, NULL, VOID
-        }
-
-        private static final Value VOID = new Value(Type.VOID, null);
-        private static final Value NULL = new Value(Type.NULL, null);
-        private static final Value TRUE = new Value(Type.BOOL, true);
-        private static final Value FALSE = new Value(Type.BOOL, false);
-
-        private final Type type;
-        private final Object raw;
-
-        private Value(Type type, Object raw) {
-            this.type = type;
-            this.raw = raw;
-        }
-
-        static Value intValue(int value) {
-            return new Value(Type.INT, value);
-        }
-
-        static Value doubleValue(double value) {
-            return new Value(Type.DOUBLE, value);
-        }
-
-        static Value stringValue(String value) {
-            return new Value(Type.STRING, value);
-        }
-
-        static Value bool(boolean value) {
-            return value ? TRUE : FALSE;
-        }
-
-        boolean isDouble() {
-            return type == Type.DOUBLE;
-        }
-
-        boolean isNumeric() {
-            return type == Type.INT || type == Type.DOUBLE;
-        }
-
-        int asInt(ParserRuleContext ctx) {
-            if (type == Type.INT) {
-                return (Integer) raw;
-            }
-            if (type == Type.DOUBLE) {
-                return ((Double) raw).intValue();
-            }
-            throw typeError("integer", ctx);
-        }
-
-        double asDouble(ParserRuleContext ctx) {
-            if (type == Type.DOUBLE) {
-                return (Double) raw;
-            }
-            if (type == Type.INT) {
-                return ((Integer) raw).doubleValue();
-            }
-            throw typeError("numeric", ctx);
-        }
-
-        boolean asBoolean(ParserRuleContext ctx) {
-            if (type == Type.BOOL) {
-                return (Boolean) raw;
-            }
-            throw typeError("boolean", ctx);
-        }
-
-        String asString() {
-            if (type == Type.STRING) {
-                return (String) raw;
-            }
-            if (type == Type.INT) {
-                return raw.toString();
-            }
-            if (type == Type.DOUBLE) {
-                return raw.toString();
-            }
-            if (type == Type.BOOL) {
-                return raw.toString();
-            }
-            return "null";
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (!(obj instanceof Value)) {
-                return false;
-            }
-            Value other = (Value) obj;
-            if (type == Type.DOUBLE || other.type == Type.DOUBLE) {
-                return Double.compare(asDoubleInternal(), other.asDoubleInternal()) == 0;
-            }
-            if (type == Type.INT && other.type == Type.INT) {
-                return Objects.equals(raw, other.raw);
-            }
-            return type == other.type && Objects.equals(raw, other.raw);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(type, raw);
-        }
-
-        private double asDoubleInternal() {
-            if (type == Type.DOUBLE) {
-                return (Double) raw;
-            }
-            if (type == Type.INT) {
-                return ((Integer) raw).doubleValue();
-            }
-            throw new IllegalStateException("Expected numeric value for comparison.");
-        }
-
-        private RuntimeException typeError(String expected, ParserRuleContext ctx) {
-            if (ctx == null || ctx.getStart() == null) {
-                return new RuntimeException("Expected " + expected + " value.");
-            }
-            Token token = ctx.getStart();
-            return new RuntimeException(
-                "Expected " + expected + " value at line " + token.getLine() + ":" + token.getCharPositionInLine());
-        }
-    }
-
-    private static final class Variable {
-        private Value value;
-        private final boolean constant;
-
-        private Variable(Value value, boolean constant) {
-            this.value = value;
-            this.constant = constant;
         }
     }
 }
