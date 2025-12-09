@@ -27,7 +27,6 @@ import static org.sigma.CompilerApp.emitJvm;
  * if/else blocks, while loops, and built-in print/println calls.
  */
 public final class ANTLRCompilerApp {
-    private static final String BACKEND = "JVM"; // or "JVM"
     private static final Path DEFAULT_SOURCE = Path.of("app/src/main/resources/source_antlr.groovy");
 
     public static void main(String[] args) throws IOException {
