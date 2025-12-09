@@ -18,6 +18,7 @@ public class SemanticResult {
     private final Map<Ast.Expression, SigmaType> expressionTypes;
     private final Map<Ast.Expression, Symbol> resolvedSymbols;
     private final Map<String, ClassInfo> classInfos;
+    private final Map<Ast.Expression, SigmaType> expressionCoercions;
 
     /**
      * Create a semantic analysis result
@@ -32,13 +33,15 @@ public class SemanticResult {
                          List<SemanticError> errors,
                          Map<Ast.Expression, SigmaType> expressionTypes,
                          Map<Ast.Expression, Symbol> resolvedSymbols,
-                         Map<String, ClassInfo> classInfos) {
+                         Map<String, ClassInfo> classInfos,
+                         Map<Ast.Expression, SigmaType> expressionCoercions) {
         this.ast = ast;
         this.symbolTable = symbolTable;
         this.errors = new ArrayList<>(errors);
         this.expressionTypes = new HashMap<>(expressionTypes);
         this.resolvedSymbols = new HashMap<>(resolvedSymbols);
         this.classInfos = new HashMap<>(classInfos);
+        this.expressionCoercions = new HashMap<>(expressionCoercions);
     }
 
     /**
@@ -88,6 +91,14 @@ public class SemanticResult {
      */
     public Map<Ast.Expression, SigmaType> getExpressionTypes() {
         return new HashMap<>(expressionTypes);
+    }
+
+    /**
+     * Get coercions inserted during semantic analysis for expressions that need
+     * conversion to satisfy type rules.
+     */
+    public Map<Ast.Expression, SigmaType> getExpressionCoercions() {
+        return new HashMap<>(expressionCoercions);
     }
 
     /**

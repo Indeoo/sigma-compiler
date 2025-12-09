@@ -70,23 +70,22 @@ public abstract class SigmaType {
         public boolean isCompatibleWith(SigmaType other) {
             if (this.equals(other)) return true;
 
-            // Numeric widening conversions
             if (other instanceof PrimitiveType) {
                 PrimitiveType otherPrim = (PrimitiveType) other;
+                boolean thisNumeric = isNumeric(this.name);
+                boolean otherNumeric = isNumeric(otherPrim.name);
 
-                // int -> double/float widening
-                if (this.name.equals("int") &&
-                    (otherPrim.name.equals("double") || otherPrim.name.equals("float"))) {
-                    return true;
-                }
-
-                // float -> double widening
-                if (this.name.equals("float") && otherPrim.name.equals("double")) {
+                // Allow numeric conversions both widening and narrowing
+                if (thisNumeric && otherNumeric) {
                     return true;
                 }
             }
 
             return false;
+        }
+
+        private boolean isNumeric(String name) {
+            return name.equals("int") || name.equals("float") || name.equals("double");
         }
 
         public int getSize() {

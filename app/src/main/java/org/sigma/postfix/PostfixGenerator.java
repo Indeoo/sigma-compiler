@@ -19,9 +19,11 @@ import java.util.Set;
 public class PostfixGenerator {
     private Map<Ast.Expression, SigmaType> expressionTypes = Map.of();
     private Map<String, PostfixFunction> functionsByName = Map.of();
+    private Map<Ast.Expression, SigmaType> expressionCoercions = Map.of();
 
     public PostfixBundle generate(SemanticResult semanticResult) {
         this.expressionTypes = semanticResult.getExpressionTypes();
+        this.expressionCoercions = semanticResult.getExpressionCoercions();
 
         Ast.MethodDeclaration scriptEntry = findScriptEntry(semanticResult.getAst());
         if (scriptEntry == null) {
@@ -251,6 +253,7 @@ public class PostfixGenerator {
         } else {
             throw new UnsupportedOperationException("Unsupported expression for postfix backend: " + expr.getClass().getSimpleName());
         }
+        applyCoercion(expr, ctx);
     }
 
     private String mapBinaryOperator(String op) {
@@ -388,6 +391,70 @@ public class PostfixGenerator {
             default:
                 return typeName;
         }
+    }
+
+    private void applyCoercion(Ast.Expression expr, GenerationContext ctx) {
+        SigmaType target = expressionCoercions.get(expr);
+        if (target == null) {
+            return;
+        }
+        SigmaType source = expressionTypes.get(expr);
+        if (source == null || source.equals(target)) {
+            return;
+        }
+        String op = conversionOp(source, target);
+        if (op != null) {
+            ctx.instructions.add(new PostfixInstruction(op, "conv"));
+        }
+    }
+
+    private String conversionOp(SigmaType from, SigmaType to) {
+        String fromName = from.getName();
+        String toName = to.getName();
+        if (fromName.equals(toName)) {
+            return null;
+        }
+        if (isInt(fromName) && isFloatLike(toName)) {
+            return "i2f";
+        }
+        if (isFloatLike(fromName) && isInt(toName)) {
+            return "f2i";
+        }
+        if (isInt(fromName) && isString(toName)) {
+            return "i2s";
+        }
+        if (isString(fromName) && isInt(toName)) {
+            return "s2i";
+        }
+        if (isFloatLike(fromName) && isString(toName)) {
+            return "f2s";
+        }
+        if (isString(fromName) && isFloatLike(toName)) {
+            return "s2f";
+        }
+        if (isInt(fromName) && isBoolean(toName)) {
+            return "i2b";
+        }
+        if (isBoolean(fromName) && isInt(toName)) {
+            return "b2i";
+        }
+        return null;
+    }
+
+    private boolean isInt(String typeName) {
+        return "int".equals(typeName);
+    }
+
+    private boolean isFloatLike(String typeName) {
+        return "float".equals(typeName) || "double".equals(typeName);
+    }
+
+    private boolean isString(String typeName) {
+        return "string".equals(typeName) || "String".equals(typeName);
+    }
+
+    private boolean isBoolean(String typeName) {
+        return "bool".equals(typeName) || "boolean".equals(typeName);
     }
 
     private static class GenerationContext {

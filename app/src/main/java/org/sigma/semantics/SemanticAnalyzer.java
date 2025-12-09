@@ -24,6 +24,7 @@ public class SemanticAnalyzer {
     private final Map<Ast.Expression, Symbol> resolvedSymbols;
     private final Map<String, ClassInfo> classInfos;
     private final Map<Symbol, List<SigmaType>> methodParameterTypes;
+    private final Map<Ast.Expression, SigmaType> expressionCoercions;
 
     // Track current method's return type for return statement checking
     private SigmaType currentMethodReturnType;
@@ -40,6 +41,7 @@ public class SemanticAnalyzer {
         this.resolvedSymbols = new HashMap<>();
         this.classInfos = new HashMap<>();
         this.methodParameterTypes = new IdentityHashMap<>();
+        this.expressionCoercions = new HashMap<>();
         this.currentMethodReturnType = null;
         this.currentClassInfo = null;
     }
@@ -60,6 +62,16 @@ public class SemanticAnalyzer {
     }
 
     /**
+     * Record that an expression must be converted to the target type to satisfy typing rules.
+     */
+    private void recordCoercion(Ast.Expression expr, SigmaType targetType) {
+        if (expr == null || targetType == null || targetType == TypeRegistry.ERROR) {
+            return;
+        }
+        expressionCoercions.put(expr, targetType);
+    }
+
+    /**
      * Analyze a compilation unit
      *
      * @param ast The AST to analyze
@@ -71,6 +83,7 @@ public class SemanticAnalyzer {
         resolvedSymbols.clear();
         classInfos.clear();
         methodParameterTypes.clear();
+        expressionCoercions.clear();
         currentClassInfo = null;
 
         // Pass 1: Collect declarations (classes, methods, global variables)
@@ -79,7 +92,7 @@ public class SemanticAnalyzer {
         // Pass 2: Type checking and name resolution
         checkSemantics(ast);
 
-        return new SemanticResult(ast, symbolTable, errors, expressionTypes, resolvedSymbols, classInfos);
+        return new SemanticResult(ast, symbolTable, errors, expressionTypes, resolvedSymbols, classInfos, expressionCoercions);
     }
 
     // ==================== PASS 1: DECLARATION COLLECTION ====================
@@ -276,6 +289,8 @@ public class SemanticAnalyzer {
                     String.format("Cannot assign %s to %s", initType, declaredType),
                     varDecl.line, varDecl.col
                 ));
+            } else if (!initType.equals(declaredType)) {
+                recordCoercion(varDecl.init, declaredType);
             }
         }
 
@@ -332,6 +347,8 @@ public class SemanticAnalyzer {
                 String.format("Cannot assign %s to %s", valueType, symbol.getType()),
                 0, 0
             ));
+        } else if (!valueType.equals(symbol.getType())) {
+            recordCoercion(assignment.value, symbol.getType());
         }
     }
 
@@ -437,6 +454,8 @@ public class SemanticAnalyzer {
                              returnType, currentMethodReturnType),
                 returnStmt.line, returnStmt.col
             ));
+        } else if (returnStmt.expr != null && !returnType.equals(currentMethodReturnType)) {
+            recordCoercion(returnStmt.expr, currentMethodReturnType);
         }
     }
 
@@ -655,6 +674,17 @@ public class SemanticAnalyzer {
         if (binary.op.equals("<") || binary.op.equals("<=") ||
             binary.op.equals(">") || binary.op.equals(">=") ||
             binary.op.equals("==") || binary.op.equals("!=")) {
+            if (leftType.isPrimitive() && rightType.isPrimitive()) {
+                SigmaType common = commonNumericType(leftType, rightType);
+                if (common != TypeRegistry.ERROR) {
+                    if (!leftType.equals(common)) {
+                        recordCoercion(binary.left, common);
+                    }
+                    if (!rightType.equals(common)) {
+                        recordCoercion(binary.right, common);
+                    }
+                }
+            }
             return TypeRegistry.BOOLEAN;
         }
 
@@ -680,18 +710,32 @@ public class SemanticAnalyzer {
             // String concatenation
             if (binary.op.equals("+") &&
                 (leftType.equals(TypeRegistry.STRING) || rightType.equals(TypeRegistry.STRING))) {
+                if (!leftType.equals(TypeRegistry.STRING)) {
+                    recordCoercion(binary.left, TypeRegistry.STRING);
+                }
+                if (!rightType.equals(TypeRegistry.STRING)) {
+                    recordCoercion(binary.right, TypeRegistry.STRING);
+                }
                 return TypeRegistry.STRING;
             }
 
             // Numeric operations - use widest type
             if (leftType.isPrimitive() && rightType.isPrimitive()) {
-                if (leftType.equals(TypeRegistry.DOUBLE) || rightType.equals(TypeRegistry.DOUBLE)) {
-                    return TypeRegistry.DOUBLE;
+                SigmaType common = commonNumericType(leftType, rightType);
+                if (common != TypeRegistry.ERROR) {
+                    // Pow requires float operands even if both are ints
+                    if (binary.op.equals("**") && !common.equals(TypeRegistry.FLOAT) && !common.equals(TypeRegistry.DOUBLE)) {
+                        common = TypeRegistry.FLOAT;
+                    }
+                    if (!leftType.equals(common)) {
+                        recordCoercion(binary.left, common);
+                    }
+                    if (!rightType.equals(common)) {
+                        recordCoercion(binary.right, common);
+                    }
+                    // Pow promotes at least to float
+                    return common;
                 }
-                if (leftType.equals(TypeRegistry.FLOAT) || rightType.equals(TypeRegistry.FLOAT)) {
-                    return TypeRegistry.FLOAT;
-                }
-                return TypeRegistry.INT;
             }
 
             errors.add(new SemanticError(
@@ -792,6 +836,8 @@ public class SemanticAnalyzer {
                                           i + 1, argType, paramType),
                             call.line, call.col
                         ));
+                    } else if (!argType.equals(paramType)) {
+                        recordCoercion(call.args.get(i), paramType);
                     }
                 }
             }
@@ -857,6 +903,8 @@ public class SemanticAnalyzer {
                                   i + 1, argType, paramType),
                     call.line, call.col
                 ));
+            } else if (!argType.equals(paramType)) {
+                recordCoercion(call.args.get(i), paramType);
             }
         }
 
@@ -955,5 +1003,27 @@ public class SemanticAnalyzer {
 
         // Return the class type
         return classSymbol.getType();
+    }
+
+    /**
+     * Compute the common numeric type for two primitive operands.
+     */
+    private SigmaType commonNumericType(SigmaType leftType, SigmaType rightType) {
+        if (leftType == null || rightType == null) {
+            return TypeRegistry.ERROR;
+        }
+        if (leftType.equals(TypeRegistry.BOOLEAN) && rightType.equals(TypeRegistry.BOOLEAN)) {
+            return TypeRegistry.BOOLEAN;
+        }
+        if (!leftType.isPrimitive() || !rightType.isPrimitive()) {
+            return TypeRegistry.ERROR;
+        }
+        if (leftType.equals(TypeRegistry.DOUBLE) || rightType.equals(TypeRegistry.DOUBLE)) {
+            return TypeRegistry.DOUBLE;
+        }
+        if (leftType.equals(TypeRegistry.FLOAT) || rightType.equals(TypeRegistry.FLOAT)) {
+            return TypeRegistry.FLOAT;
+        }
+        return TypeRegistry.INT;
     }
 }
