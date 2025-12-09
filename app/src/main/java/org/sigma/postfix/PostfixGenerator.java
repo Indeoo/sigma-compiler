@@ -135,6 +135,8 @@ public class PostfixGenerator {
             emitIfStatement((Ast.IfStatement) stmt, ctx);
         } else if (stmt instanceof Ast.WhileStatement) {
             emitWhileStatement((Ast.WhileStatement) stmt, ctx);
+        } else if (stmt instanceof Ast.ForEachStatement) {
+            emitForEach((Ast.ForEachStatement) stmt, ctx);
         } else if (stmt instanceof Ast.Block) {
             emitBlock((Ast.Block) stmt, ctx);
         } else if (stmt instanceof Ast.ReturnStatement) {
@@ -221,6 +223,60 @@ public class PostfixGenerator {
         ctx.instructions.add(new PostfixInstruction("JF", "jf"));
 
         emitStatement(whileStmt.body, ctx);
+        ctx.instructions.add(new PostfixInstruction(startLabel, "label"));
+        ctx.instructions.add(new PostfixInstruction("JMP", "jump"));
+        ctx.defineLabel(endLabel);
+    }
+
+    /**
+     * Lower a for-each into a counter-based while loop.
+     * Semantics currently only supports primitive iterables; here we assume an int bound and iterate 0..bound-1.
+     */
+    private void emitForEach(Ast.ForEachStatement forStmt, GenerationContext ctx) {
+        SigmaType iterableType = expressionTypes.get(forStmt.iterable);
+        if (iterableType == null || !"int".equals(iterableType.getName())) {
+            throw new UnsupportedOperationException("Postfix backend supports for-each only over int iterable (loop count)");
+        }
+
+        String iteratorName = forStmt.iteratorName;
+        String boundName = iteratorName + "$bound$" + ctx.labelCounter;
+
+        String iteratorType = forStmt.typeName != null ? mapType(forStmt.typeName) : "int";
+        ctx.registerVariable(iteratorName, iteratorType);
+        ctx.registerVariable(boundName, "int");
+
+        // bound = iterableExpr
+        ctx.instructions.add(new PostfixInstruction(boundName, "l-val"));
+        emitExpression(forStmt.iterable, ctx);
+        ctx.instructions.add(new PostfixInstruction("=", "assign_op"));
+
+        // iterator = 0
+        ctx.instructions.add(new PostfixInstruction(iteratorName, "l-val"));
+        ctx.instructions.add(new PostfixInstruction("0", "int"));
+        ctx.instructions.add(new PostfixInstruction("=", "assign_op"));
+
+        String startLabel = ctx.newLabel();
+        String endLabel = ctx.newLabel();
+
+        ctx.defineLabel(startLabel);
+        // condition: iterator < bound
+        ctx.instructions.add(new PostfixInstruction(iteratorName, "r-val"));
+        ctx.instructions.add(new PostfixInstruction(boundName, "r-val"));
+        ctx.instructions.add(new PostfixInstruction("<", "rel_op"));
+        ctx.instructions.add(new PostfixInstruction(endLabel, "label"));
+        ctx.instructions.add(new PostfixInstruction("JF", "jf"));
+
+        // body
+        emitStatement(forStmt.body, ctx);
+
+        // iterator = iterator + 1
+        ctx.instructions.add(new PostfixInstruction(iteratorName, "l-val"));
+        ctx.instructions.add(new PostfixInstruction(iteratorName, "r-val"));
+        ctx.instructions.add(new PostfixInstruction("1", "int"));
+        ctx.instructions.add(new PostfixInstruction("+", "math_op"));
+        ctx.instructions.add(new PostfixInstruction("=", "assign_op"));
+
+        // jump to start
         ctx.instructions.add(new PostfixInstruction(startLabel, "label"));
         ctx.instructions.add(new PostfixInstruction("JMP", "jump"));
         ctx.defineLabel(endLabel);

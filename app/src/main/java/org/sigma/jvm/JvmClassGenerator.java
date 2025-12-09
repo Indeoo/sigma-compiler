@@ -184,7 +184,7 @@ public class JvmClassGenerator implements Opcodes {
         } else if (statement instanceof Ast.ReturnStatement) {
             emitReturnStatement((Ast.ReturnStatement) statement, ctx);
         } else if (statement instanceof Ast.ForEachStatement) {
-            throw unsupported(statement, "for-each loops are not supported by the JVM backend yet.");
+            emitForEachStatement((Ast.ForEachStatement) statement, ctx);
         } else if (statement instanceof Ast.MethodDeclaration) {
             // Already emitted
         } else {
@@ -266,6 +266,58 @@ public class JvmClassGenerator implements Opcodes {
         emitStatement(stmt.body, ctx);
         mv.visitJumpInsn(GOTO, loopStart);
         mv.visitLabel(loopEnd);
+    }
+
+    /**
+     * Lower for-each (counting form) into while-loop with int iterator and bound.
+     * Supported shape: for ([int] i in expr) body; where expr is an int bound.
+     */
+    private void emitForEachStatement(Ast.ForEachStatement stmt, MethodCompilationContext ctx) {
+        MethodVisitor mv = ctx.mv;
+
+        SigmaType iterableType = typeOf(stmt.iterable);
+        if (!isInt(iterableType)) {
+            throw unsupported(stmt, "JVM backend supports for-each only over int iterable (loop count)");
+        }
+
+        SigmaType iteratorType = TypeRegistry.INT;
+        if (stmt.typeName != null) {
+            iteratorType = resolveType(stmt.typeName, stmt.line, stmt.col);
+        }
+        if (!isInt(iteratorType)) {
+            throw unsupported(stmt, "Iterator type must be int for JVM for-each lowering");
+        }
+
+        // Declare iterator and bound in current scope
+        LocalVariable iteratorVar = ctx.scope.declare(stmt.iteratorName, iteratorType);
+        String boundName = stmt.iteratorName + "$bound$";
+        LocalVariable boundVar = ctx.scope.declare(boundName, TypeRegistry.INT);
+
+        // bound = iterableExpr (coerce to int)
+        emitExpression(stmt.iterable, ctx);
+        coerce(typeOf(stmt.iterable), TypeRegistry.INT, mv);
+        mv.visitVarInsn(ISTORE, boundVar.index);
+
+        // iterator = 0
+        mv.visitInsn(ICONST_0);
+        mv.visitVarInsn(ISTORE, iteratorVar.index);
+
+        Label startLabel = new Label();
+        Label endLabel = new Label();
+
+        mv.visitLabel(startLabel);
+        // if iterator >= bound goto end
+        mv.visitVarInsn(ILOAD, iteratorVar.index);
+        mv.visitVarInsn(ILOAD, boundVar.index);
+        mv.visitJumpInsn(IF_ICMPGE, endLabel);
+
+        // body
+        emitStatement(stmt.body, ctx);
+
+        // iterator++
+        mv.visitIincInsn(iteratorVar.index, 1);
+        mv.visitJumpInsn(GOTO, startLabel);
+        mv.visitLabel(endLabel);
     }
 
     private void emitReturnStatement(Ast.ReturnStatement stmt, MethodCompilationContext ctx) {

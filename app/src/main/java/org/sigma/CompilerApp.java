@@ -20,7 +20,7 @@ import java.util.Map;
 public class CompilerApp {
     private static final Path POSTFIX_OUTPUT = Path.of("app/src/main/resources/postfix/output.postfix");
     private static final Path JVM_OUTPUT = Path.of("app/build/Script.class");
-    private static final String BACKEND = "JVM"; // or "JVM"
+    private static final String BACKEND = "PSM"; // or "JVM"
 
     public static void main(String[] args) throws IOException {
         Path p;
