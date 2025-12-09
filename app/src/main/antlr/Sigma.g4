@@ -3,7 +3,7 @@
 grammar Sigma;
 
 @header {
-    package org.example.parser;
+    package org.sigma.antlr;
 }
 
 // Parser rules (with lowercase names)
