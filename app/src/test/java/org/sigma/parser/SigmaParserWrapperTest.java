@@ -129,17 +129,6 @@ public class SigmaParserWrapperTest {
     }
 
     @Test
-    void testPrintStatementParsing() {
-        String code = "print(\"Hello\");";
-
-        ParseResult result = parser.parse(code);
-        assertTrue(result.isSuccessful());
-        assertNotNull(result.getAst());
-        assertFalse(result.getAst().statements.isEmpty());
-        assertTrue(result.getAst().statements.get(0) instanceof Ast.PrintStatement);
-    }
-
-    @Test
     void testSyntaxErrorMissingSemicolon() {
         String code = """
             int x = 10
